@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>다리 건너기 퍼즐 (쾨니히스베르크 스테이지 포함)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    #game-container {
+      display: inline-block;
+    }
+    #canvas {
+      border: 1px solid #333;
+      background: #eef;
+      cursor: pointer;
+    }
+    #info {
+      margin-top: 10px;
+    }
+    .btn-group {
+      margin-top: 10px;
+    }
+    button {
+      margin: 0 4px;
+      padding: 6px 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>다리 건너기 퍼즐</h1>
+  <div id="game-container">
+    <canvas id="canvas" width="600" height="400"></canvas>
+    <div id="info"></div>
+    <div class="btn-group">
+      <button id="prev">이전 스테이지</button>
+      <button id="reset">현재 스테이지 리셋</button>
+      <button id="next">다음 스테이지</button>
+    </div>
+  </div>
+
+  <script>
+    // ==== 스테이지 정의 ====
+    // nodes: {id, x, y}
+    // edges: {id, a, b}  (a, b는 노드 id)
+    // startNode: 시작 노드 id
+    const levels = [
+      {
+        id: 1,
+        title: "Stage 1 - 연습용",
+        description: "모든 다리를 한 번씩만 지나서 출발지로 돌아오세요.",
+        nodes: [
+          { id: 0, x: 200, y: 200 },
+          { id: 1, x: 400, y: 200 }
+        ],
+        edges: [
+          { id: 0, a: 0, b: 1 },
+          { id: 1, a: 0, b: 1 } // 평행 다리 2개
+        ],
+        startNode: 0
+      },
+      {
+        id: 2,
+        title: "Stage 2 - 삼각형",
+        description: "조금 더 복잡한 삼각형 다리 그래프입니다.",
+        nodes: [
+          { id: 0, x: 200, y: 250 },
+          { id: 1, x: 400, y: 250 },
+          { id: 2, x: 300, y: 120 }
+        ],
+        edges: [
+          { id: 0, a: 0, b: 1 },
+          { id: 1, a: 1, b: 2 },
+          { id: 2, a: 2, b: 0 }
+        ],
+        startNode: 0
+      },
+      {
+        id: 3,
+        title: "Stage 3 - 사각형",
+        description: "사각형 그래프. 여전히 모든 정점 차수가 짝수라서 왕복 가능합니다.",
+        nodes: [
+          { id: 0, x: 180, y: 120 },
+          { id: 1, x: 420, y: 120 },
+          { id: 2, x: 420, y: 280 },
+          { id: 3, x: 180, y: 280 }
+        ],
+        edges: [
+          { id: 0, a: 0, b: 1 },
+          { id: 1, a: 1, b: 2 },
+          { id: 2, a: 2, b: 3 },
+          { id: 3, a: 3, b: 0 }
+        ],
+        startNode: 0
+      },
+      {
+        id: 4,
+        title: "Stage 4 - 조금 복잡한 사각형",
+        description: "사각형 + 대각선 다리. 잘 생각하면 왕복이 가능합니다.",
+        nodes: [
+          { id: 0, x: 150, y: 120 },
+          { id: 1, x: 450, y: 120 },
+          { id: 2, x: 450, y: 280 },
+          { id: 3, x: 150, y: 280 }
+        ],
+        edges: [
+          { id: 0, a: 0, b: 1 },
+          { id: 1, a: 1, b: 2 },
+          { id: 2, a: 2, b: 3 },
+          { id: 3, a: 3, b: 0 },
+          // 대각선(0-2)을 두 번
+          { id: 4, a: 0, b: 2 },
+          { id: 5, a: 0, b: 2 }
+        ],
+        startNode: 0
+      },
+      {
+        id: 5,
+        title: "Stage 5 - 쾨니히스베르크의 다리",
+        description:
+          "역사적으로 유명한 '쾨니히스베르크의 다리' 문제입니다. 수학적으로는 모든 다리를 한 번씩만 지나서 출발지로 돌아오는 것이 불가능한 그래프입니다. 직접 해보며 왜 그런지 느껴보세요.",
+        nodes: [
+          // 간단히 4개의 땅으로 표현
+          { id: 0, x: 300, y: 80 },   // 중심 섬
+          { id: 1, x: 120, y: 200 },  // 왼쪽 땅
+          { id: 2, x: 480, y: 200 },  // 오른쪽 땅
+          { id: 3, x: 300, y: 320 }   // 아래 땅
+        ],
+        edges: [
+          // 고전 쾨니히스베르크 그래프 구조(차수 5,3,3,3)
+          { id: 0, a: 0, b: 1 },
+          { id: 1, a: 0, b: 1 },
+          { id: 2, a: 0, b: 2 },
+          { id: 3, a: 0, b: 2 },
+          { id: 4, a: 0, b: 3 },
+          { id: 5, a: 1, b: 3 },
+          { id: 6, a: 2, b: 3 }
+        ],
+        startNode: 0
+      }
+    ];
+
+    // ==== 공통 상태 ====
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const infoDiv = document.getElementById("info");
+
+    let currentLevelIndex = 0;
+    let usedEdges = []; // edgeId => true/false
+    let currentNodeId = null; // 현재 위치
+    let startNodeId = null;
+
+    // ==== 유틸: 현재 레벨 ====
+    function getCurrentLevel() {
+      return levels[currentLevelIndex];
+    }
+
+    // ==== 초기화 ====
+    function initLevel(index) {
+      currentLevelIndex = index;
+      const level = getCurrentLevel();
+
+      usedEdges = {};
+      level.edges.forEach(e => {
+        usedEdges[e.id] = false;
+      });
+
+      startNodeId = level.startNode;
+      currentNodeId = startNodeId;
+
+      draw();
+      updateInfo();
+    }
+
+    // ==== Euler 조건 체크(교육용 메시지) ====
+    function checkEulerCondition(level) {
+      const degree = {};
+      level.nodes.forEach(n => (degree[n.id] = 0));
+      level.edges.forEach(e => {
+        degree[e.a]++;
+        degree[e.b]++;
+      });
+
+      const oddVertices = Object.values(degree).filter(d => d % 2 === 1).length;
+
+      // 모든 정점 차수가 짝수면 Euler 회로 존재
+      if (oddVertices === 0) {
+        return "이 그래프는 이론적으로 모든 다리를 한 번씩만 지나서 출발지로 돌아오는 경로(오일러 회로)가 존재합니다.";
+      } else if (oddVertices === 2) {
+        return "이 그래프는 모든 다리를 한 번씩만 지나는 경로(오일러 경로)는 있지만, 출발지로 돌아오는 것은 불가능합니다.";
+      } else {
+        return "이 그래프는 오일러 경로도, 오일러 회로도 존재하지 않습니다. (쾨니히스베르크와 같은 구조입니다)";
+      }
+    }
+
+    // ==== 그리기 ====
+    function draw() {
+      const level = getCurrentLevel();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 다리(간선)
+      level.edges.forEach(e => {
+        const nodeA = level.nodes.find(n => n.id === e.a);
+        const nodeB = level.nodes.find(n => n.id === e.b);
+        ctx.beginPath();
+        ctx.moveTo(nodeA.x, nodeA.y);
+        ctx.lineTo(nodeB.x, nodeB.y);
+        // 사용된 다리는 회색, 아니면 진한 파랑
+        ctx.strokeStyle = usedEdges[e.id] ? "#999999" : "#004488";
+        ctx.lineWidth = 5;
+        ctx.stroke();
+      });
+
+      // 섬(노드)
+      level.nodes.forEach(n => {
+        const isCurrent = n.id === currentNodeId;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 18, 0, Math.PI * 2);
+        ctx.fillStyle = isCurrent ? "#ffcc00" : "#ffffff";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#333333";
+        ctx.stroke();
+
+        // 텍스트(노드 번호)
+        ctx.fillStyle = "#000000";
+        ctx.font = "14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(n.id, n.x, n.y);
+      });
+    }
+
+    // ==== 정보 UI ====
+    function updateInfo(message) {
+      const level = getCurrentLevel();
+
+      const totalEdges = level.edges.length;
+      const usedCount = Object.values(usedEdges).filter(v => v).length;
+
+      let html = `
+        <div><strong>${level.title}</strong></div>
+        <div style="margin-top:4px;">${level.description}</div>
+        <div style="margin-top:4px;">현재 스테이지: ${level.id} / ${levels.length}</div>
+        <div>사용한 다리: ${usedCount} / ${totalEdges}</div>
+        <div>현재 위치한 섬 ID: ${currentNodeId}</div>
+      `;
+
+      // 5스테이지(혹은 Euler 불가능한 경우) 안내용
+      const eulerMsg = checkEulerCondition(level);
+      html += `<div style="margin-top:4px; font-size: 13px; color:#555;">${eulerMsg}</div>`;
+
+      if (message) {
+        html += `<div style="margin-top:6px; color:#c00;"><strong>${message}</strong></div>`;
+      }
+
+      infoDiv.innerHTML = html;
+    }
+
+    // ==== 승리 조건 체크 ====
+    function checkWin() {
+      const level = getCurrentLevel();
+      const totalEdges = level.edges.length;
+      const usedCount = Object.values(usedEdges).filter(v => v).length;
+
+      if (usedCount === totalEdges && currentNodeId === startNodeId) {
+        updateInfo("축하합니다! 모든 다리를 한 번씩만 건너고 출발지로 돌아왔습니다! ✅");
+        return true;
+      }
+      return false;
+    }
+
+    // ==== 클릭 처리: 가장 가까운 다리 찾기 ====
+    function onCanvasClick(event) {
+      const level = getCurrentLevel();
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      // 클릭 위치와 가장 가까운 간선을 찾는다.
+      let clickedEdge = null;
+      let minDist = 999999;
+
+      level.edges.forEach(e => {
+        const nodeA = level.nodes.find(n => n.id === e.a);
+        const nodeB = level.nodes.find(n => n.id === e.b);
+
+        const dist = pointToSegmentDistance(x, y, nodeA.x, nodeA.y, nodeB.x, nodeB.y);
+        if (dist < minDist && dist < 15) { // 15px 안쪽이면 클릭으로 인정
+          minDist = dist;
+          clickedEdge = e;
+        }
+      });
+
+      if (!clickedEdge) {
+        return;
+      }
+
+      // 이미 사용한 다리는 못 간다
+      if (usedEdges[clickedEdge.id]) {
+        updateInfo("이미 사용한 다리입니다. 다른 다리를 선택하세요.");
+        return;
+      }
+
+      // 현재 위치한 섬과 연결된 다리인지 확인
+      if (clickedEdge.a !== currentNodeId && clickedEdge.b !== currentNodeId) {
+        updateInfo("현재 내가 서 있는 섬과 연결된 다리만 건널 수 있습니다.");
+        return;
+      }
+
+      // 이동
+      const nextNodeId = (clickedEdge.a === currentNodeId) ? clickedEdge.b : clickedEdge.a;
+      currentNodeId = nextNodeId;
+      usedEdges[clickedEdge.id] = true;
+
+      draw();
+      if (!checkWin()) {
+        updateInfo();
+      }
+    }
+
+    // 점에서 선분까지의 거리 계산 (클릭 판정용)
+    function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
+      const A = px - x1;
+      const B = py - y1;
+      const C = x2 - x1;
+      const D = y2 - y1;
+
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      let param = -1;
+      if (lenSq !== 0) param = dot / lenSq;
+
+      let xx, yy;
+      if (param < 0) {
+        xx = x1;
+        yy = y1;
+      } else if (param > 1) {
+        xx = x2;
+        yy = y2;
+      } else {
+        xx = x1 + param * C;
+        yy = y1 + param * D;
+      }
+
+      const dx = px - xx;
+      const dy = py - yy;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // ==== 버튼 이벤트 ====
+    document.getElementById("prev").addEventListener("click", () => {
+      let nextIndex = currentLevelIndex - 1;
+      if (nextIndex < 0) nextIndex = levels.length - 1;
+      initLevel(nextIndex);
+    });
+
+    document.getElementById("next").addEventListener("click", () => {
+      let nextIndex = currentLevelIndex + 1;
+      if (nextIndex >= levels.length) nextIndex = 0;
+      initLevel(nextIndex);
+    });
+
+    document.getElementById("reset").addEventListener("click", () => {
+      initLevel(currentLevelIndex);
+    });
+
+    canvas.addEventListener("click", onCanvasClick);
+
+    // 시작
+    initLevel(0);
+  </script>
+</body>
+</html>
