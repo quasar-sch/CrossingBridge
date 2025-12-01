@@ -196,16 +196,16 @@
     <div id="result-overlay">
       <div class="overlay-box">
         <h3>쾨니히스베르크의 다리</h3>
-        <p>이 그래프는 역사적으로 유명한 한붓그리기 문제입니다.</p>
-        <p>
-          각 땅(섬)을 점(정점), 다리를 선(간선)으로 생각하면,
-          홀수 차수 정점이 <strong>4개</strong>라서
-          한붓그리기가 <strong>수학적으로 불가능</strong>합니다.
-        </p>
-        <p>즉, 누구도 이 스테이지를 규칙대로 깰 수 없습니다 😊</p>
-        <div class="overlay-buttons">
-          <button id="result-close">처음 스테이지로</button>
-        </div>
+      <p>이 그래프는 역사적으로 유명한 한붓그리기 문제입니다.</p>
+      <p>
+        각 땅(섬)을 점(정점), 다리를 선(간선)으로 생각하면,
+        홀수 차수 정점이 <strong>4개</strong>라서
+        한붓그리기가 <strong>수학적으로 불가능</strong>합니다.
+      </p>
+      <p>즉, 누구도 이 스테이지를 규칙대로 깰 수 없습니다 😊</p>
+      <div class="overlay-buttons">
+        <button id="result-close">처음 스테이지로</button>
+      </div>
       </div>
     </div>
   </div>
@@ -371,6 +371,7 @@ let cheatArmed = false;
 
 /* ===========================
    평행 다리 offset 계산
+   (겹쳐 보이는 문제 해결)
 =========================== */
 
 function prepareParallelOffsets(level) {
@@ -386,38 +387,38 @@ function prepareParallelOffsets(level) {
     if (n === 1) {
       arr[0].offsetIndex = 0;
     } else {
+      // -k ... 0 ... +k 형태로 분배
       for (let i = 0; i < n; i++) {
-        arr[i].offsetIndex = i - (n - 1) / 2; // -0.5, +0.5 / -1,0,+1 ...
+        arr[i].offsetIndex = i - (n - 1) / 2;
       }
     }
   });
 }
 
 /* ===========================
-   레벨 상태 초기화(같은 스테이지 내)
+   유틸 / 초기화
 =========================== */
 
-function resetLevelState() {
-  const level = getLevel();
-  usedEdges = {};
-  level.edges.forEach(e => usedEdges[e.id] = false);
-  currentNodeId = level.startNode;
-  levelCleared  = false;
-  draw();
-  updateInfo();
-  nextBtn.style.display = "none";
+function getLevel() {
+  return levels[currentLevelIndex];
 }
-
-/* ===========================
-   레벨 변경(다른 스테이지로)
-=========================== */
 
 function initLevel(i) {
   currentLevelIndex = i;
   const level = getLevel();
-  resetCount = 0;              // ★ 새 스테이지 들어갈 때만 리셋 카운트 초기화
-  prepareParallelOffsets(level);
-  resetLevelState();
+
+  usedEdges = {};
+  level.edges.forEach(e => usedEdges[e.id] = false);
+
+  currentNodeId = level.startNode;
+  levelCleared  = false;
+  resetCount    = 0;
+
+  prepareParallelOffsets(level);   // ★ 평행 다리 곡률 설정
+
+  draw();
+  updateInfo();
+  nextBtn.style.display = "none";
 }
 
 /* ===========================
@@ -460,10 +461,10 @@ function drawRiver(level) {
 }
 
 /* ===========================
-   곡선 다리 (평행 다리 더 벌어지게)
+   곡선 다리
 =========================== */
 
-function drawCurve(A, B, offsetIndex) {
+function drawCurve(A, B, offset) {
   const x1 = A.x, y1 = A.y;
   const x2 = B.x, y2 = B.y;
 
@@ -476,9 +477,7 @@ function drawCurve(A, B, offsetIndex) {
   const nx = -dy / len;
   const ny =  dx / len;
 
-  const k = offsetIndex || 0;
-  const base = 30;                  // ★ base를 30으로 키움 (두 개짜리도 확실히 벌어짐)
-  const curve = base * k;
+  const curve = 18 * (offset || 0);  // offsetIndex에 따라 위/아래로 휨
 
   const cx = mx + nx * curve;
   const cy = my + ny * curve;
@@ -672,16 +671,16 @@ resetBtn.addEventListener("click", () => {
   if (level.id === 5) {
     resetCount++;
     if (resetCount >= 5) {
-      overlay.style.display = "flex";  // ★ 포기 팝업 표시
+      overlay.style.display = "flex";
       return;
     }
   }
 
-  resetLevelState();   // ★ 같은 스테이지 내 상태만 초기화 (resetCount 유지)
+  initLevel(currentLevelIndex);
 });
 
 /* ===========================
-   다음 스테이지
+   다음 스테이지 (조건 단순화)
 =========================== */
 
 nextBtn.addEventListener("click", () => {
@@ -700,7 +699,7 @@ giveupCancel.addEventListener("click", () => {
 
 giveupConfirm.addEventListener("click", () => {
   overlay.style.display = "none";
-  resultOverlay.style.display = "flex"; // ★ 결과/설명 화면으로
+  resultOverlay.style.display = "flex";
 });
 
 resultClose.addEventListener("click", () => {
