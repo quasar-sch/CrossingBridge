@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>다리 건너기 퍼즐 (쾨니히스베르크 스테이지 포함)</title>
+  <title>다리 건너기 퍼즐 (쾨니히스베르크 포함)</title>
   <style>
     body {
       font-family: sans-serif;
@@ -19,6 +19,9 @@
     }
     #info {
       margin-top: 10px;
+      max-width: 600px;
+      text-align: left;
+      font-size: 14px;
     }
     .btn-group {
       margin-top: 10px;
@@ -26,6 +29,7 @@
     button {
       margin: 0 4px;
       padding: 6px 10px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -42,22 +46,22 @@
   </div>
 
   <script>
-    // ==== 스테이지 정의 ====
+    // ===== 스테이지 정의 =====
     // nodes: {id, x, y}
-    // edges: {id, a, b}  (a, b는 노드 id)
+    // edges: {id, a, b, offsetIndex}  (a, b는 노드 id)
     // startNode: 시작 노드 id
     const levels = [
       {
         id: 1,
-        title: "Stage 1 - 연습용",
-        description: "모든 다리를 한 번씩만 지나서 출발지로 돌아오세요.",
+        title: "Stage 1 - 왕복 맛보기",
+        description: "노란 섬에서 시작해서 모든 다리를 한 번씩만 건너고 다시 돌아오세요.",
         nodes: [
           { id: 0, x: 200, y: 200 },
           { id: 1, x: 400, y: 200 }
         ],
         edges: [
           { id: 0, a: 0, b: 1 },
-          { id: 1, a: 0, b: 1 } // 평행 다리 2개
+          { id: 1, a: 0, b: 1 } // 평행 다리 2개 (이제 안 겹치게 그림)
         ],
         startNode: 0
       },
@@ -66,8 +70,8 @@
         title: "Stage 2 - 삼각형",
         description: "조금 더 복잡한 삼각형 다리 그래프입니다.",
         nodes: [
-          { id: 0, x: 200, y: 250 },
-          { id: 1, x: 400, y: 250 },
+          { id: 0, x: 200, y: 260 },
+          { id: 1, x: 400, y: 260 },
           { id: 2, x: 300, y: 120 }
         ],
         edges: [
@@ -80,7 +84,7 @@
       {
         id: 3,
         title: "Stage 3 - 사각형",
-        description: "사각형 그래프. 여전히 모든 정점 차수가 짝수라서 왕복 가능합니다.",
+        description: "사각형 그래프. 모든 정점 차수가 짝수라 오일러 회로(왕복)가 존재합니다.",
         nodes: [
           { id: 0, x: 180, y: 120 },
           { id: 1, x: 420, y: 120 },
@@ -97,8 +101,8 @@
       },
       {
         id: 4,
-        title: "Stage 4 - 조금 복잡한 사각형",
-        description: "사각형 + 대각선 다리. 잘 생각하면 왕복이 가능합니다.",
+        title: "Stage 4 - 사각형 + 대각선",
+        description: "사각형에 대각선 다리가 2개 추가된 그래프입니다. 여전히 왕복이 가능합니다.",
         nodes: [
           { id: 0, x: 150, y: 120 },
           { id: 1, x: 450, y: 120 },
@@ -110,9 +114,8 @@
           { id: 1, a: 1, b: 2 },
           { id: 2, a: 2, b: 3 },
           { id: 3, a: 3, b: 0 },
-          // 대각선(0-2)을 두 번
           { id: 4, a: 0, b: 2 },
-          { id: 5, a: 0, b: 2 }
+          { id: 5, a: 0, b: 2 } // 0-2 대각선 두 개 (평행)
         ],
         startNode: 0
       },
@@ -120,16 +123,16 @@
         id: 5,
         title: "Stage 5 - 쾨니히스베르크의 다리",
         description:
-          "역사적으로 유명한 '쾨니히스베르크의 다리' 문제입니다. 수학적으로는 모든 다리를 한 번씩만 지나서 출발지로 돌아오는 것이 불가능한 그래프입니다. 직접 해보며 왜 그런지 느껴보세요.",
+          "역사적으로 유명한 '쾨니히스베르크의 다리' 문제입니다. 모든 다리를 한 번씩만 건너면서 왕복하는 것은 수학적으로 불가능한 그래프입니다.",
         nodes: [
-          // 간단히 4개의 땅으로 표현
-          { id: 0, x: 300, y: 80 },   // 중심 섬
-          { id: 1, x: 120, y: 200 },  // 왼쪽 땅
-          { id: 2, x: 480, y: 200 },  // 오른쪽 땅
-          { id: 3, x: 300, y: 320 }   // 아래 땅
+          // 4개의 땅: 왼쪽 위, 오른쪽 위, 중앙 섬, 아래 땅 느낌
+          { id: 0, x: 300, y: 200 }, // 중앙 섬
+          { id: 1, x: 130, y: 110 }, // 왼쪽 위 땅
+          { id: 2, x: 470, y: 110 }, // 오른쪽 위 땅
+          { id: 3, x: 300, y: 320 }  // 아래 땅
         ],
         edges: [
-          // 고전 쾨니히스베르크 그래프 구조(차수 5,3,3,3)
+          // 쾨니히스베르크 그래프 구조와 같은 연결 (차수: 0은 5, 나머지는 3)
           { id: 0, a: 0, b: 1 },
           { id: 1, a: 0, b: 1 },
           { id: 2, a: 0, b: 2 },
@@ -142,22 +145,46 @@
       }
     ];
 
-    // ==== 공통 상태 ====
+    // ===== 공통 상태 =====
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
     const infoDiv = document.getElementById("info");
 
     let currentLevelIndex = 0;
-    let usedEdges = []; // edgeId => true/false
-    let currentNodeId = null; // 현재 위치
+    let usedEdges = {};     // edgeId -> true/false
+    let currentNodeId = null;
     let startNodeId = null;
 
-    // ==== 유틸: 현재 레벨 ====
+    // ===== 현재 레벨 가져오기 =====
     function getCurrentLevel() {
       return levels[currentLevelIndex];
     }
 
-    // ==== 초기화 ====
+    // ===== 평행 다리 offsetIndex 세팅 =====
+    function prepareParallelOffsets(level) {
+      // key: "min-max" -> edges[]
+      const map = {};
+      level.edges.forEach(e => {
+        const key = e.a < e.b ? `${e.a}-${e.b}` : `${e.b}-${e.a}`;
+        if (!map[key]) map[key] = [];
+        map[key].push(e);
+      });
+
+      // 같은 쌍에 여러 개 있으면 -1,0,1 이런 식으로 index 부여
+      Object.values(map).forEach(edgesArr => {
+        const n = edgesArr.length;
+        if (n === 1) {
+          edgesArr[0].offsetIndex = 0;
+        } else {
+          // 가운데를 0으로 두고 양쪽으로 퍼지게
+          for (let i = 0; i < n; i++) {
+            edgesArr[i].offsetIndex = i - (n - 1) / 2;
+          }
+        }
+      });
+    }
+
+    // ===== 레벨 초기화 =====
     function initLevel(index) {
       currentLevelIndex = index;
       const level = getCurrentLevel();
@@ -170,11 +197,14 @@
       startNodeId = level.startNode;
       currentNodeId = startNodeId;
 
+      // 평행 다리용 offsetIndex 계산
+      prepareParallelOffsets(level);
+
       draw();
       updateInfo();
     }
 
-    // ==== Euler 조건 체크(교육용 메시지) ====
+    // ===== Euler 조건 설명용 =====
     function checkEulerCondition(level) {
       const degree = {};
       level.nodes.forEach(n => (degree[n.id] = 0));
@@ -183,32 +213,56 @@
         degree[e.b]++;
       });
 
-      const oddVertices = Object.values(degree).filter(d => d % 2 === 1).length;
+      const oddCount = Object.values(degree).filter(d => d % 2 === 1).length;
 
-      // 모든 정점 차수가 짝수면 Euler 회로 존재
-      if (oddVertices === 0) {
-        return "이 그래프는 이론적으로 모든 다리를 한 번씩만 지나서 출발지로 돌아오는 경로(오일러 회로)가 존재합니다.";
-      } else if (oddVertices === 2) {
-        return "이 그래프는 모든 다리를 한 번씩만 지나는 경로(오일러 경로)는 있지만, 출발지로 돌아오는 것은 불가능합니다.";
+      if (oddCount === 0) {
+        return "이 그래프는 이론적으로 모든 다리를 한 번씩만 지나서 출발지로 돌아올 수 있는 오일러 회로가 존재합니다.";
+      } else if (oddCount === 2) {
+        return "이 그래프는 모든 다리를 한 번씩 지나는 오일러 경로는 있지만, 출발지로 돌아오는 것은 불가능합니다.";
       } else {
-        return "이 그래프는 오일러 경로도, 오일러 회로도 존재하지 않습니다. (쾨니히스베르크와 같은 구조입니다)";
+        return "이 그래프는 오일러 경로도, 오일러 회로도 존재하지 않습니다. (쾨니히스베르크와 같은 구조입니다.)";
       }
     }
 
-    // ==== 그리기 ====
+    // ===== 그리기 =====
     function draw() {
       const level = getCurrentLevel();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 쾨니히스베르크 느낌용: Stage 5에서만 강 배경 대충 깔아주기 (선택 기능)
+      if (level.id === 5) {
+        ctx.fillStyle = "#b0d8ff";
+        // 강(대충 가운데 지나가는 물길 느낌)
+        ctx.fillRect(0, 140, 600, 80);
+        ctx.fillRect(0, 220, 600, 80);
+      }
 
       // 다리(간선)
       level.edges.forEach(e => {
         const nodeA = level.nodes.find(n => n.id === e.a);
         const nodeB = level.nodes.find(n => n.id === e.b);
+
+        const ax = nodeA.x;
+        const ay = nodeA.y;
+        const bx = nodeB.x;
+        const by = nodeB.y;
+
+        // 평행 다리 offset 계산
+        const dx = bx - ax;
+        const dy = by - ay;
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        const nx = -dy / len; // 수직 방향 단위 벡터
+        const ny = dx / len;
+
+        const offsetAmount = 8; // 픽셀
+        const offsetIndex = e.offsetIndex || 0;
+        const ox = nx * offsetAmount * offsetIndex;
+        const oy = ny * offsetAmount * offsetIndex;
+
         ctx.beginPath();
-        ctx.moveTo(nodeA.x, nodeA.y);
-        ctx.lineTo(nodeB.x, nodeB.y);
-        // 사용된 다리는 회색, 아니면 진한 파랑
-        ctx.strokeStyle = usedEdges[e.id] ? "#999999" : "#004488";
+        ctx.moveTo(ax + ox, ay + oy);
+        ctx.lineTo(bx + ox, by + oy);
+        ctx.strokeStyle = usedEdges[e.id] ? "#999999" : "#004488"; // 회색 / 파랑
         ctx.lineWidth = 5;
         ctx.stroke();
       });
@@ -218,13 +272,13 @@
         const isCurrent = n.id === currentNodeId;
         ctx.beginPath();
         ctx.arc(n.x, n.y, 18, 0, Math.PI * 2);
-        ctx.fillStyle = isCurrent ? "#ffcc00" : "#ffffff";
+        ctx.fillStyle = isCurrent ? "#ffcc00" : "#ffffff"; // 현재 위치면 노랑
         ctx.fill();
         ctx.lineWidth = 2;
         ctx.strokeStyle = "#333333";
         ctx.stroke();
 
-        // 텍스트(노드 번호)
+        // 텍스트(노드 id)
         ctx.fillStyle = "#000000";
         ctx.font = "14px sans-serif";
         ctx.textAlign = "center";
@@ -233,10 +287,9 @@
       });
     }
 
-    // ==== 정보 UI ====
+    // ===== 정보 UI =====
     function updateInfo(message) {
       const level = getCurrentLevel();
-
       const totalEdges = level.edges.length;
       const usedCount = Object.values(usedEdges).filter(v => v).length;
 
@@ -248,7 +301,6 @@
         <div>현재 위치한 섬 ID: ${currentNodeId}</div>
       `;
 
-      // 5스테이지(혹은 Euler 불가능한 경우) 안내용
       const eulerMsg = checkEulerCondition(level);
       html += `<div style="margin-top:4px; font-size: 13px; color:#555;">${eulerMsg}</div>`;
 
@@ -259,7 +311,7 @@
       infoDiv.innerHTML = html;
     }
 
-    // ==== 승리 조건 체크 ====
+    // ===== 승리 조건 체크 =====
     function checkWin() {
       const level = getCurrentLevel();
       const totalEdges = level.edges.length;
@@ -272,48 +324,48 @@
       return false;
     }
 
-    // ==== 클릭 처리: 가장 가까운 다리 찾기 ====
+    // ===== 노드 클릭 처리 =====
     function onCanvasClick(event) {
       const level = getCurrentLevel();
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
-      // 클릭 위치와 가장 가까운 간선을 찾는다.
-      let clickedEdge = null;
-      let minDist = 999999;
-
-      level.edges.forEach(e => {
-        const nodeA = level.nodes.find(n => n.id === e.a);
-        const nodeB = level.nodes.find(n => n.id === e.b);
-
-        const dist = pointToSegmentDistance(x, y, nodeA.x, nodeA.y, nodeB.x, nodeB.y);
-        if (dist < minDist && dist < 15) { // 15px 안쪽이면 클릭으로 인정
-          minDist = dist;
-          clickedEdge = e;
-        }
+      // 클릭한 노드 찾기
+      const clickedNode = level.nodes.find(n => {
+        const dx = x - n.x;
+        const dy = y - n.y;
+        return Math.sqrt(dx * dx + dy * dy) <= 20; // 반지름 18 + 여유
       });
 
-      if (!clickedEdge) {
+      if (!clickedNode) {
+        // 섬 아닌 곳 클릭은 무시
         return;
       }
 
-      // 이미 사용한 다리는 못 간다
-      if (usedEdges[clickedEdge.id]) {
-        updateInfo("이미 사용한 다리입니다. 다른 다리를 선택하세요.");
+      // 같은 섬 클릭하면 아무 일도 안 하게
+      if (clickedNode.id === currentNodeId) {
+        updateInfo("이미 그 섬에 서 있습니다. 다른 섬을 눌러 보세요.");
         return;
       }
 
-      // 현재 위치한 섬과 연결된 다리인지 확인
-      if (clickedEdge.a !== currentNodeId && clickedEdge.b !== currentNodeId) {
-        updateInfo("현재 내가 서 있는 섬과 연결된 다리만 건널 수 있습니다.");
+      // 현재 섬과 클릭한 섬을 연결하는 "아직 사용하지 않은 다리"가 있는지 확인
+      const candidateEdges = level.edges.filter(e => {
+        const match =
+          (e.a === currentNodeId && e.b === clickedNode.id) ||
+          (e.b === currentNodeId && e.a === clickedNode.id);
+        return match && !usedEdges[e.id];
+      });
+
+      if (candidateEdges.length === 0) {
+        updateInfo("이 두 섬 사이에 더 이상 사용할 수 있는 다리가 없습니다.");
         return;
       }
 
-      // 이동
-      const nextNodeId = (clickedEdge.a === currentNodeId) ? clickedEdge.b : clickedEdge.a;
-      currentNodeId = nextNodeId;
-      usedEdges[clickedEdge.id] = true;
+      // 여러 개 있다면 그냥 첫 번째 사용
+      const edgeToUse = candidateEdges[0];
+      usedEdges[edgeToUse.id] = true;
+      currentNodeId = clickedNode.id;
 
       draw();
       if (!checkWin()) {
@@ -321,36 +373,7 @@
       }
     }
 
-    // 점에서 선분까지의 거리 계산 (클릭 판정용)
-    function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
-      const A = px - x1;
-      const B = py - y1;
-      const C = x2 - x1;
-      const D = y2 - y1;
-
-      const dot = A * C + B * D;
-      const lenSq = C * C + D * D;
-      let param = -1;
-      if (lenSq !== 0) param = dot / lenSq;
-
-      let xx, yy;
-      if (param < 0) {
-        xx = x1;
-        yy = y1;
-      } else if (param > 1) {
-        xx = x2;
-        yy = y2;
-      } else {
-        xx = x1 + param * C;
-        yy = y1 + param * D;
-      }
-
-      const dx = px - xx;
-      const dy = py - yy;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    // ==== 버튼 이벤트 ====
+    // ===== 버튼 이벤트 =====
     document.getElementById("prev").addEventListener("click", () => {
       let nextIndex = currentLevelIndex - 1;
       if (nextIndex < 0) nextIndex = levels.length - 1;
