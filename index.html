@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>다리 건너기 퍼즐 (쾨니히스베르크 포함)</title>
+  <title>다리 건너기 퍼즐</title>
   <style>
     body {
       font-family: sans-serif;
@@ -32,7 +32,7 @@
       padding: 6px 10px;
       cursor: pointer;
     }
-    /* 포기 확인용 오버레이 */
+    /* 오버레이 */
     #overlay,
     #result-overlay {
       position: absolute;
@@ -54,17 +54,11 @@
       border-radius: 8px;
       max-width: 520px;
       text-align: left;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    }
-    .overlay-box h2 {
-      margin-top: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     .overlay-buttons {
       margin-top: 10px;
       text-align: right;
-    }
-    .overlay-buttons button {
-      margin-left: 6px;
     }
     /* 시작 화면 */
     #start-screen {
@@ -73,616 +67,494 @@
   </style>
 </head>
 <body>
-  <h1>다리 건너기 퍼즐</h1>
 
-  <!-- 시작 화면 -->
-  <div id="start-screen">
-    <p>
-      섬과 섬을 잇는 다리를 <strong>딱 한 번씩만</strong> 지나가 보세요.<br>
-      한붓그리기가 가능한 스테이지도 있고, 불가능한 스테이지도 있습니다.
-    </p>
-    <button id="start-btn">시작하기</button>
-  </div>
+<h1>다리 건너기 퍼즐</h1>
 
-  <!-- 게임 화면 -->
-  <div id="game-container" style="display:none;">
-    <canvas id="canvas" width="600" height="400"></canvas>
+<!-- 시작 화면 -->
+<div id="start-screen">
+  <p>
+    섬과 섬을 잇는 다리를 <strong>딱 한 번씩만</strong> 지나가 보세요.<br>
+    한붓그리기가 가능한 스테이지도 있고, 불가능한 스테이지도 있습니다.
+  </p>
+  <button id="start-btn">시작하기</button>
+</div>
 
-    <!-- 포기 확인 오버레이 (스테이지 5에서 리셋 5번 누르면 등장) -->
-    <div id="overlay">
-      <div class="overlay-box">
-        <h2>포기하시겠습니까?</h2>
-        <p>
-          이 스테이지는 아무리 시도해도 모든 다리를 한 번씩만 지나가는 한붓그리기가
-          되지 않는 것처럼 느껴지나요?<br>
-          그래도 한 번만 더 도전해 볼 수도 있고, 지금 포기하고 해설을 볼 수도 있어요.
-        </p>
-        <div class="overlay-buttons">
-          <button id="giveup-cancel">아니요, 다시 도전할래요</button>
-          <button id="giveup-confirm">네, 포기하고 해설 볼래요</button>
-        </div>
+<!-- 게임 화면 -->
+<div id="game-container" style="display:none;">
+  <canvas id="canvas" width="600" height="400"></canvas>
+
+  <!-- 포기 확인 -->
+  <div id="overlay">
+    <div class="overlay-box">
+      <h2>포기하시겠습니까?</h2>
+      <p>
+        이 스테이지는 수학적으로도 한붓그리기가 불가능한 그래프입니다.<br>
+        지금 포기하고 해설을 볼 수 있습니다.
+      </p>
+      <div class="overlay-buttons">
+        <button id="giveup-cancel">아니요</button>
+        <button id="giveup-confirm">네, 해설 보기</button>
       </div>
-    </div>
-
-    <!-- 결과/해설 오버레이 (스테이지 5 전용) -->
-    <div id="result-overlay">
-      <div class="overlay-box">
-        <h2>쾨니히스베르크의 다리 - 왜 못 깰까?</h2>
-        <p>
-          이 그래프는 역사적으로 유명한 <strong>쾨니히스베르크의 다리 문제</strong>를
-          단순화해서 만든 것입니다.<br><br>
-          규칙은 간단했죠:
-        </p>
-        <ul>
-          <li>모든 다리를 <strong>딱 한 번씩만</strong> 지나간다.</li>
-          <li>어디서 시작해서 어디서 끝나는지는 상관 없다. (한붓그리기)</li>
-        </ul>
-        <p>
-          그런데 어떤 다리 배치는 이렇게 한붓그리기가 가능하고, 어떤 배치는 절대
-          불가능합니다.<br>
-          그걸 판단해주는 개념이 바로 <strong>오일러 경로 / 오일러 회로</strong>예요.
-        </p>
-        <p>
-          각 땅(섬)을 <strong>점(정점)</strong>으로, 다리를 <strong>선(간선)</strong>으로
-          바꾸어 생각해보면, 각 점에서 몇 개의 선이 나가는지(차수)를 셉니다.
-        </p>
-        <ul>
-          <li>모든 점의 차수가 짝수이면 → <strong>오일러 회로</strong> (시작점으로 돌아오는 한붓그리기 가능)</li>
-          <li>차수가 홀수인 점이 정확히 2개이면 → <strong>오일러 경로</strong> (시작점과 끝점이 다른 한붓그리기 가능)</li>
-          <li>그 외(홀수 차수 점이 0개도 2개도 아니면) → <strong>한붓그리기 자체가 불가능</strong></li>
-        </ul>
-        <p>
-          쾨니히스베르크의 다리 그래프는 <strong>홀수 차수 정점이 4개</strong>이기 때문에
-          위 조건에 걸리지 않습니다.<br>
-          그래서 <strong>수학적으로 절대 한붓그리기가 불가능한 그래프</strong>예요.
-        </p>
-        <p style="margin-top:8px;">
-          즉, 당신이 이 스테이지를 못 깬 게 아니라,<br>
-          <strong>애초에 전 세계 누구도 절대 깰 수 없는 스테이지</strong>를 플레이한 겁니다 😊
-        </p>
-        <div class="overlay-buttons">
-          <button id="result-close">처음 스테이지로 돌아가기</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="info"></div>
-    <div class="btn-group">
-      <button id="reset">현재 스테이지 리셋</button>
-      <button id="next" style="display:none;">다음 스테이지</button>
     </div>
   </div>
 
-  <script>
-    // ===== 스테이지 정의 =====
-    // 한붓그리기 규칙: "모든 다리를 정확히 한 번씩만 지나면 클리어"
-    const levels = [
-      {
-        id: 1,
-        title: "Stage 1 - 기본 연습",
-        description: "노란 섬에서 시작해서 모든 다리를 한 번씩만 지나 보세요.",
-        nodes: [
-          { id: 0, x: 180, y: 120 },
-          { id: 1, x: 420, y: 120 },
-          { id: 2, x: 420, y: 280 },
-          { id: 3, x: 180, y: 280 }
-        ],
-        edges: [
-          // 사각형 + 대각선 하나: 한붓그리기 가능(두 개의 홀수 정점)
-          { id: 0, a: 0, b: 1 },
-          { id: 1, a: 1, b: 2 },
-          { id: 2, a: 2, b: 3 },
-          { id: 3, a: 3, b: 0 },
-          { id: 4, a: 0, b: 2 }
-        ],
-        startNode: 0
-      },
-      {
-        id: 2,
-        title: "Stage 2 - 별 모양 그래프",
-        description: "중앙 섬과 주변 섬들을 연결한 그래프입니다. 모든 다리를 한 번씩만 지나 보세요.",
-        nodes: [
-          { id: 0, x: 300, y: 200 }, // 중앙
-          { id: 1, x: 140, y: 120 },
-          { id: 2, x: 460, y: 120 },
-          { id: 3, x: 460, y: 280 },
-          { id: 4, x: 140, y: 280 }
-        ],
-        edges: [
-          // 중앙-모서리 4개
-          { id: 0, a: 0, b: 1 },
-          { id: 1, a: 0, b: 2 },
-          { id: 2, a: 0, b: 3 },
-          { id: 3, a: 0, b: 4 },
-          // 바깥 네 점을 거의 사각형처럼 연결
-          { id: 4, a: 1, b: 2 },
-          { id: 5, a: 2, b: 3 },
-          { id: 6, a: 3, b: 4 }
-        ],
-        startNode: 0
-      },
-      {
-        id: 3,
-        title: "Stage 3 - 육각형 미로",
-        description: "육각형 모양의 섬들과 여러 다리로 이루어진 복잡한 그래프입니다.",
-        nodes: [
-          { id: 0, x: 300, y: 80 },
-          { id: 1, x: 440, y: 140 },
-          { id: 2, x: 440, y: 260 },
-          { id: 3, x: 300, y: 320 },
-          { id: 4, x: 160, y: 260 },
-          { id: 5, x: 160, y: 140 }
-        ],
-        edges: [
-          // 육각형 링
-          { id: 0, a: 0, b: 1 },
-          { id: 1, a: 1, b: 2 },
-          { id: 2, a: 2, b: 3 },
-          { id: 3, a: 3, b: 4 },
-          { id: 4, a: 4, b: 5 },
-          { id: 5, a: 5, b: 0 },
-          // 내부 연결(조금 더 복잡하게)
-          { id: 6, a: 0, b: 3 },
-          { id: 7, a: 2, b: 5 },
-          { id: 8, a: 0, b: 2 }
-        ],
-        startNode: 0
-      },
-      {
-        id: 4,
-        title: "Stage 4 - 교차 다리",
-        description: "서로 교차하는 다리들이 많은 까다로운 그래프입니다. 모든 다리를 한 번씩만 지나 보세요.",
-        nodes: [
-          { id: 0, x: 140, y: 120 },
-          { id: 1, x: 460, y: 120 },
-          { id: 2, x: 460, y: 280 },
-          { id: 3, x: 140, y: 280 }
-        ],
-        edges: [
-          // 사각형 기본
-          { id: 0, a: 0, b: 1 },
-          { id: 1, a: 1, b: 2 },
-          { id: 2, a: 2, b: 3 },
-          { id: 3, a: 3, b: 0 },
-          // 대각선 여러 개
-          { id: 4, a: 0, b: 2 },
-          { id: 5, a: 0, b: 2 },
-          { id: 6, a: 1, b: 3 },
-          { id: 7, a: 1, b: 3 },
-          // 추가 다리 하나로 홀수 정점 2개 만들기
-          { id: 8, a: 0, b: 1 }
-        ],
-        startNode: 0
-      },
-      {
-        id: 5,
-        title: "Stage 5 - 쾨니히스베르크의 다리",
-        description:
-          "역사적으로 유명한 '쾨니히스베르크의 다리'를 단순화한 그래프입니다. 한붓그리기가 가능한지 직접 해보세요.",
-        nodes: [
-          // 이미지 느낌을 살린 위상동형 배치
-          { id: 0, x: 300, y: 200 }, // 중앙 섬 C
-          { id: 1, x: 170, y: 130 }, // 왼쪽 육지 A
-          { id: 2, x: 430, y: 130 }, // 오른쪽 육지 D
-          { id: 3, x: 300, y: 310 }  // 아래 육지 B
-        ],
-        edges: [
-          // 쾨니히스베르크 그래프 구조 동일 (7개의 다리)
-          { id: 0, a: 0, b: 1 },
-          { id: 1, a: 0, b: 1 },
-          { id: 2, a: 0, b: 2 },
-          { id: 3, a: 0, b: 2 },
-          { id: 4, a: 0, b: 3 },
-          { id: 5, a: 1, b: 3 },
-          { id: 6, a: 2, b: 3 }
-        ],
-        startNode: 0
-      }
-    ];
+  <!-- 스테이지 5 해설 -->
+  <div id="result-overlay">
+    <div class="overlay-box">
+      <h2>쾨니히스베르크의 다리 - 왜 못 깰까?</h2>
+      <p>
+        이 그래프는 역사적으로 유명한 '쾨니히스베르크의 다리' 문제입니다.
+        모든 다리를 <strong>한 번씩만</strong> 지나가고 싶었지만,
+        실제로는 불가능합니다.
+      </p>
+      <p>홀수 차수 정점이 4개 → 한붓그리기 절대 불가능</p>
+      <div class="overlay-buttons">
+        <button id="result-close">처음 스테이지로</button>
+      </div>
+    </div>
+  </div>
 
-    // ===== 공통 상태 =====
-    const startScreen = document.getElementById("start-screen");
-    const startBtn = document.getElementById("start-btn");
-    const gameContainer = document.getElementById("game-container");
+  <div id="info"></div>
+  <div class="btn-group">
+    <button id="reset">현재 스테이지 리셋</button>
+    <button id="next" style="display:none;">다음 스테이지</button>
+  </div>
+</div>
 
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-    const infoDiv = document.getElementById("info");
-    const nextBtn = document.getElementById("next");
-    const resetBtn = document.getElementById("reset");
+<script>
+/* ===========================
+    스테이지 설정
+=========================== */
+const levels = [
+  {
+    id: 1,
+    title: "Stage 1 - 기본 연습",
+    description: "가장 단순한 구조입니다.",
+    nodes: [
+      { id: 0, x: 180, y: 120 },
+      { id: 1, x: 420, y: 120 },
+      { id: 2, x: 420, y: 280 },
+      { id: 3, x: 180, y: 280 }
+    ],
+    edges: [
+      { id: 0, a:0, b:1 },
+      { id: 1, a:1, b:2 },
+      { id: 2, a:2, b:3 },
+      { id: 3, a:3, b:0 },
+      { id: 4, a:0, b:2 }
+    ],
+    startNode: 0
+  },
 
-    const overlay = document.getElementById("overlay");
-    const giveupCancelBtn = document.getElementById("giveup-cancel");
-    const giveupConfirmBtn = document.getElementById("giveup-confirm");
+  {
+    id: 2,
+    title: "Stage 2 - 별 모양 그래프",
+    description: "스타형 그래프.",
+    nodes: [
+      { id: 0, x:300, y:200 },
+      { id: 1, x:140, y:120 },
+      { id: 2, x:460, y:120 },
+      { id: 3, x:460, y:280 },
+      { id: 4, x:140, y:280 }
+    ],
+    edges: [
+      { id:0, a:0, b:1 },
+      { id:1, a:0, b:2 },
+      { id:2, a:0, b:3 },
+      { id:3, a:0, b:4 },
+      { id:4, a:1, b:2 },
+      { id:5, a:2, b:3 },
+      { id:6, a:3, b:4 }
+    ],
+    startNode: 2   // ★ 수정
+  },
 
-    const resultOverlay = document.getElementById("result-overlay");
-    const resultCloseBtn = document.getElementById("result-close");
+  {
+    id: 3,
+    title: "Stage 3 - 육각형 미로",
+    description: "복잡한 육각 구조.",
+    nodes: [
+      { id:0, x:300, y:80 },
+      { id:1, x:440, y:140 },
+      { id:2, x:440, y:260 },
+      { id:3, x:300, y:320 },
+      { id:4, x:160, y:260 },
+      { id:5, x:160, y:140 }
+    ],
+    edges: [
+      { id:0, a:0,b:1 },
+      { id:1, a:1,b:2 },
+      { id:2, a:2,b:3 },
+      { id:3, a:3,b:4 },
+      { id:4, a:4,b:5 },
+      { id:5, a:5,b:0 },
+      { id:6, a:0,b:3 },
+      { id:7, a:2,b:5 },
+      { id:8, a:0,b:2 }
+    ],
+    startNode: 3   // ★ 수정
+  },
 
-    let currentLevelIndex = 0;
-    let usedEdges = {}; // edgeId -> true/false
-    let currentNodeId = null;
-    let startNodeId = null;
-    let levelCleared = false;
+  {
+    id: 4,
+    title: "Stage 4 - 교차 다리",
+    description: "많은 교차 다리.",
+    nodes: [
+      { id:0, x:140, y:120 },
+      { id:1, x:460, y:120 },
+      { id:2, x:460, y:280 },
+      { id:3, x:140, y:280 }
+    ],
+    edges: [
+      { id:0, a:0,b:1 },
+      { id:1, a:1,b:2 },
+      { id:2, a:2,b:3 },
+      { id:3, a:3,b:0 },
+      { id:4, a:0,b:2 },
+      { id:5, a:0,b:2 },
+      { id:6, a:1,b:3 },
+      { id:7, a:1,b:3 },
+      { id:8, a:0,b:1 }
+    ],
+    startNode: 0
+  },
 
-    // 스테이지 5 리셋 누른 횟수
-    let stage5ResetCount = 0;
+  {
+    id: 5,
+    title: "Stage 5 - 쾨니히스베르크",
+    description: "역사적 난제, 절대 못 깨는 스테이지.",
+    nodes: [
+      { id:0, x:300, y:160 }, // 중앙 C
+      { id:1, x:160, y:110 }, // 왼쪽 A
+      { id:2, x:440, y:110 }, // 오른쪽 D
+      { id:3, x:300, y:290 }  // 아래 B
+    ],
+    edges: [
+      { id:0, a:0,b:1 },
+      { id:1, a:0,b:1 },
+      { id:2, a:0,b:2 },
+      { id:3, a:0,b:2 },
+      { id:4, a:0,b:3 },
+      { id:5, a:1,b:3 },
+      { id:6, a:2,b:3 }
+    ],
+    startNode: 0
+  }
+];
 
-    // 치트용 플래그 (` 키를 마지막에 눌렀는지)
-    let cheatArmed = false;
+/* ===============================
+   전역 상태
+================================*/
+const startScreen = document.getElementById("start-screen");
+const startBtn    = document.getElementById("start-btn");
 
-    // ===== 현재 레벨 =====
-    function getCurrentLevel() {
-      return levels[currentLevelIndex];
+const gameContainer = document.getElementById("game-container");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const nextBtn  = document.getElementById("next");
+const resetBtn = document.getElementById("reset");
+
+const overlay        = document.getElementById("overlay");
+const giveupCancel   = document.getElementById("giveup-cancel");
+const giveupConfirm  = document.getElementById("giveup-confirm");
+
+const resultOverlay  = document.getElementById("result-overlay");
+const resultClose    = document.getElementById("result-close");
+
+const infoDiv = document.getElementById("info");
+
+let currentLevelIndex = 0;
+let usedEdges = {};
+let currentNodeId = null;
+let levelCleared = false;
+let resetCount = 0;
+
+let cheatArmed = false;
+
+/* ===============================
+   초기화
+================================*/
+function getLevel() {
+  return levels[currentLevelIndex];
+}
+
+function initLevel(index) {
+  currentLevelIndex = index;
+  const level = getLevel();
+
+  usedEdges = {};
+  level.edges.forEach(e => usedEdges[e.id] = false);
+
+  currentNodeId = level.startNode;
+  levelCleared = false;
+  resetCount = 0;
+
+  draw();
+  updateInfo();
+  nextBtn.style.display = "none";
+}
+
+/* ===============================
+   곡선 다리 그리기
+================================*/
+function drawCurveEdge(x1,y1,x2,y2,offset=0){
+  const mx = (x1+x2)/2;
+  const my = (y1+y2)/2;
+
+  const dx = x2-x1;
+  const dy = y2-y1;
+  const len = Math.sqrt(dx*dx + dy*dy) || 1;
+
+  const nx = -dy/len;
+  const ny = dx/len;
+
+  const curve = 20 * (offset+1);
+
+  const cx = mx + nx * curve;
+  const cy = my + ny * curve;
+
+  ctx.quadraticCurveTo(cx, cy, x2, y2);
+}
+
+/* ===============================
+   강 모양 (스테이지 별)
+================================*/
+function drawRiver(level){
+  ctx.save();
+  ctx.fillStyle = "#b6e3ff";
+
+  if(level.id===5){
+    // 위 강
+    ctx.beginPath();
+    ctx.moveTo(40,100);
+    ctx.quadraticCurveTo(300, 60, 560,100);
+    ctx.lineTo(560,140);
+    ctx.quadraticCurveTo(300,110,40,140);
+    ctx.closePath();
+    ctx.fill();
+
+    // 아래 강
+    ctx.beginPath();
+    ctx.moveTo(40,220);
+    ctx.quadraticCurveTo(300,180,560,220);
+    ctx.lineTo(560,260);
+    ctx.quadraticCurveTo(300,230,40,260);
+    ctx.closePath();
+    ctx.fill();
+  }
+  else {
+    ctx.beginPath();
+    ctx.moveTo(80,140);
+    ctx.quadraticCurveTo(300,110,520,140);
+    ctx.lineTo(520,260);
+    ctx.quadraticCurveTo(300,290,80,260);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* ===============================
+   전체 그리기
+================================*/
+function draw(){
+  const level = getLevel();
+  ctx.clearRect(0,0,600,400);
+
+  drawRiver(level);
+
+  // 다리
+  level.edges.forEach(e=>{
+    const A = level.nodes.find(n=>n.id===e.a);
+    const B = level.nodes.find(n=>n.id===e.b);
+
+    ctx.beginPath();
+    ctx.moveTo(A.x, A.y);
+
+    const offset = e.offsetIndex || 0;
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = usedEdges[e.id] ? "#999" : "#004488";
+
+    drawCurveEdge(A.x, A.y, B.x, B.y, offset);
+    ctx.stroke();
+  });
+
+  // 섬
+  level.nodes.forEach(n=>{
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, 18, 0, Math.PI*2);
+    ctx.fillStyle = (n.id===currentNodeId) ? "#ffdd55" : "#fff";
+    ctx.fill();
+    ctx.strokeStyle="#333";
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    ctx.fillStyle="#000";
+    ctx.font="14px sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(n.id, n.x, n.y);
+  });
+}
+
+/* ===============================
+   정보 출력
+================================*/
+function updateInfo(msg=""){
+  const level = getLevel();
+  const total = level.edges.length;
+  const used  = Object.values(usedEdges).filter(v=>v).length;
+
+  let txt = `
+    <strong>${level.title}</strong><br>
+    ${level.description}<br><br>
+    사용한 다리: ${used} / ${total}<br>
+    현재 위치한 섬: ${currentNodeId}<br>
+  `;
+  if(msg) txt += `<p style="color:#c00">${msg}</p>`;
+
+  if(levelCleared && level.id <=4){
+    txt += `<p style="color:#007700;"><strong>클리어! 다음 스테이지 버튼 활성화!</strong></p>`;
+  }
+
+  infoDiv.innerHTML = txt;
+}
+
+/* ===============================
+   승리 조건 체크
+================================*/
+function checkWin(){
+  const level = getLevel();
+  const total = level.edges.length;
+  const used  = Object.values(usedEdges).filter(v=>v).length;
+
+  if(used===total){
+    levelCleared = true;
+    updateInfo("축하합니다! 모든 다리를 지나갔습니다!");
+    if(level.id<=4) nextBtn.style.display="inline-block";
+    return true;
+  }
+  return false;
+}
+
+/* ===============================
+   노드 클릭
+================================*/
+canvas.addEventListener("click", ev=>{
+  const level = getLevel();
+  const rect  = canvas.getBoundingClientRect();
+  const x = ev.clientX - rect.left;
+  const y = ev.clientY - rect.top;
+
+  const clicked = level.nodes.find(n=>Math.hypot(n.x-x, n.y-y)<=20);
+  if(!clicked) return;
+
+  if(clicked.id === currentNodeId){
+    updateInfo("이미 그 섬입니다.");
+    return;
+  }
+
+  const usable = level.edges.filter(e=>{
+    const c =
+      (e.a===currentNodeId && e.b===clicked.id) ||
+      (e.b===currentNodeId && e.a===clicked.id);
+    return c && !usedEdges[e.id];
+  });
+
+  if(usable.length===0){
+    updateInfo("사용 가능한 다리가 없습니다.");
+    return;
+  }
+
+  const edge = usable[0];
+  usedEdges[edge.id] = true;
+  currentNodeId = clicked.id;
+
+  draw();
+  if(!checkWin()) updateInfo();
+});
+
+/* ===============================
+   치트 기능 (` + Enter)
+================================*/
+function animateClear(){
+  const level = getLevel();
+  let i = 0;
+
+  function step(){
+    if(i>=level.edges.length){
+      checkWin();
+      return;
     }
+    usedEdges[level.edges[i].id] = true;
+    draw();
+    i++;
+    setTimeout(step, 150);
+  }
+  step();
+}
 
-    // ===== 평행 다리 offsetIndex 세팅 =====
-    function prepareParallelOffsets(level) {
-      const map = {};
-      level.edges.forEach(e => {
-        const key = e.a < e.b ? `${e.a}-${e.b}` : `${e.b}-${e.a}`;
-        if (!map[key]) map[key] = [];
-        map[key].push(e);
-      });
+document.addEventListener("keydown",e=>{
+  if(gameContainer.style.display==="none") return;
 
-      Object.values(map).forEach(edgesArr => {
-        const n = edgesArr.length;
-        if (n === 1) {
-          edgesArr[0].offsetIndex = 0;
-        } else {
-          for (let i = 0; i < n; i++) {
-            edgesArr[i].offsetIndex = i - (n - 1) / 2;
-          }
-        }
-      });
+  if(e.key==="`"){
+    cheatArmed = true;
+    return;
+  }
+  if(!cheatArmed) return;
+
+  if(e.key==="Enter"){
+    animateClear();
+  }else if(e.key==="ArrowLeft"){
+    initLevel((currentLevelIndex-1+levels.length)%levels.length);
+  }else if(e.key==="ArrowRight"){
+    initLevel((currentLevelIndex+1)%levels.length);
+  }
+
+  cheatArmed = false;
+});
+
+/* ===============================
+   리셋 버튼 (스테이지 5 포기)
+================================*/
+resetBtn.addEventListener("click", ()=>{
+  const level = getLevel();
+
+  if(level.id===5){
+    resetCount++;
+    if(resetCount>=5){
+      overlay.style.display="flex";
+      return;
     }
+  }
+  initLevel(currentLevelIndex);
+});
 
-    // ===== 레벨 초기화 =====
-    function initLevel(index) {
-      currentLevelIndex = index;
-      const level = getCurrentLevel();
+/* 포기창 */
+giveupCancel.addEventListener("click", ()=>{
+  overlay.style.display="none";
+});
+giveupConfirm.addEventListener("click", ()=>{
+  overlay.style.display="none";
+  resultOverlay.style.display="flex";
+});
 
-      usedEdges = {};
-      level.edges.forEach(e => {
-        usedEdges[e.id] = false;
-      });
+/* 해설창 */
+resultClose.addEventListener("click", ()=>{
+  resultOverlay.style.display="none";
+  initLevel(0);
+});
 
-      startNodeId = level.startNode;
-      currentNodeId = startNodeId;
-      levelCleared = false;
+/* ===============================
+   시작 버튼
+================================*/
+startBtn.addEventListener("click", ()=>{
+  startScreen.style.display="none";
+  gameContainer.style.display="inline-block";
+  initLevel(0);
+});
 
-      // 스테이지 5 리셋 카운트 초기화
-      if (level.id === 5) {
-        stage5ResetCount = 0;
-      }
-
-      prepareParallelOffsets(level);
-
-      draw();
-      updateInfo();
-
-      // 1~4 스테이지만 다음 버튼, 클리어 후에만 보이게
-      if (level.id <= 4) {
-        nextBtn.style.display = levelCleared ? "inline-block" : "none";
-      } else {
-        nextBtn.style.display = "none";
-      }
-    }
-
-    // ===== 강/배경 그리기 =====
-    function drawRiver(level) {
-      ctx.save();
-      ctx.fillStyle = "#b0d8ff";
-
-      if (level.id === 1) {
-        // 사각형 사이를 가로지르는 강
-        ctx.beginPath();
-        ctx.moveTo(100, 160);
-        ctx.quadraticCurveTo(300, 140, 500, 160);
-        ctx.lineTo(500, 220);
-        ctx.quadraticCurveTo(300, 240, 100, 220);
-        ctx.closePath();
-        ctx.fill();
-      } else if (level.id === 2) {
-        // 중앙에서 대각선으로 흐르는 강
-        ctx.beginPath();
-        ctx.moveTo(80, 180);
-        ctx.quadraticCurveTo(300, 150, 520, 180);
-        ctx.lineTo(520, 230);
-        ctx.quadraticCurveTo(300, 260, 80, 230);
-        ctx.closePath();
-        ctx.fill();
-      } else if (level.id === 3) {
-        // 육각형 주변을 도는 강
-        ctx.beginPath();
-        ctx.moveTo(120, 90);
-        ctx.quadraticCurveTo(300, 40, 480, 90);
-        ctx.quadraticCurveTo(540, 200, 480, 310);
-        ctx.quadraticCurveTo(300, 360, 120, 310);
-        ctx.quadraticCurveTo(60, 200, 120, 90);
-        ctx.closePath();
-        ctx.fill();
-      } else if (level.id === 4) {
-        // 사각형을 감싸는 강
-        ctx.beginPath();
-        ctx.moveTo(80, 80);
-        ctx.quadraticCurveTo(300, 40, 520, 80);
-        ctx.lineTo(520, 320);
-        ctx.quadraticCurveTo(300, 360, 80, 320);
-        ctx.closePath();
-        ctx.fill();
-      } else if (level.id === 5) {
-        // 쾨니히스베르크 느낌: 위/아래 두 줄 강 + 중앙 섬 주변 곡선
-        // 위쪽 강
-        ctx.beginPath();
-        ctx.moveTo(40, 120);
-        ctx.quadraticCurveTo(300, 80, 560, 120);
-        ctx.lineTo(560, 160);
-        ctx.quadraticCurveTo(300, 120, 40, 160);
-        ctx.closePath();
-        ctx.fill();
-        // 아래쪽 강
-        ctx.beginPath();
-        ctx.moveTo(40, 240);
-        ctx.quadraticCurveTo(300, 200, 560, 240);
-        ctx.lineTo(560, 280);
-        ctx.quadraticCurveTo(300, 240, 40, 280);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      ctx.restore();
-    }
-
-    // ===== 그리기 (곡선 다리 + 강) =====
-    function draw() {
-      const level = getCurrentLevel();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // 강/배경 먼저
-      drawRiver(level);
-
-      // 다리(간선) - 곡선으로 그리기
-      level.edges.forEach(e => {
-        const nodeA = level.nodes.find(n => n.id === e.a);
-        const nodeB = level.nodes.find(n => n.id === e.b);
-
-        const ax = nodeA.x;
-        const ay = nodeA.y;
-        const bx = nodeB.x;
-        const by = nodeB.y;
-
-        const mx = (ax + bx) / 2;
-        const my = (ay + by) / 2;
-
-        const dx = bx - ax;
-        const dy = by - ay;
-        const len = Math.sqrt(dx * dx + dy * dy) || 1;
-        const nx = -dy / len;
-        const ny = dx / len;
-
-        const offsetIndex = e.offsetIndex || 0;
-        // 기본 곡률 + 평행 다리는 더 많이 휘게
-        const baseCurve = 18;
-        const curveAmount = baseCurve * (1 + Math.abs(offsetIndex));
-
-        const cx = mx + nx * curveAmount * (offsetIndex === 0 ? 0.5 : offsetIndex);
-        const cy = my + ny * curveAmount * (offsetIndex === 0 ? 0.5 : offsetIndex);
-
-        ctx.beginPath();
-        ctx.moveTo(ax, ay);
-        ctx.quadraticCurveTo(cx, cy, bx, by);
-        ctx.strokeStyle = usedEdges[e.id] ? "#999999" : "#004488";
-        ctx.lineWidth = 5;
-        ctx.stroke();
-      });
-
-      // 섬(노드)
-      level.nodes.forEach(n => {
-        const isCurrent = n.id === currentNodeId;
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, 18, 0, Math.PI * 2);
-        ctx.fillStyle = isCurrent ? "#ffcc00" : "#ffffff"; // 현재 위치 노랑
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#333333";
-        ctx.stroke();
-
-        ctx.fillStyle = "#000000";
-        ctx.font = "14px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(n.id, n.x, n.y);
-      });
-    }
-
-    // ===== 정보 UI =====
-    function updateInfo(message) {
-      const level = getCurrentLevel();
-      const totalEdges = level.edges.length;
-      const usedCount = Object.values(usedEdges).filter(v => v).length;
-
-      let html = `
-        <div><strong>${level.title}</strong></div>
-        <div style="margin-top:4px;">${level.description}</div>
-        <div style="margin-top:4px;">현재 스테이지: ${level.id} / ${levels.length}</div>
-        <div>사용한 다리: ${usedCount} / ${totalEdges}</div>
-        <div>현재 위치한 섬 ID: ${currentNodeId}</div>
-        <div style="margin-top:4px; font-size: 13px; color:#555;">
-          규칙: 모든 다리를 <strong>딱 한 번씩만</strong> 지나면 클리어입니다. 출발지로 돌아올 필요는 없어요.
-        </div>
-      `;
-
-      if (levelCleared && level.id <= 4) {
-        html += `<div style="margin-top:6px; color:#006600;"><strong>✔ 클리어했습니다! '다음 스테이지' 버튼이 활성화되었습니다.</strong></div>`;
-      }
-
-      if (message) {
-        html += `<div style="margin-top:6px; color:#c00;"><strong>${message}</strong></div>`;
-      }
-
-      infoDiv.innerHTML = html;
-    }
-
-    // ===== 승리 조건 체크 (한붓그리기: 모든 다리 사용) =====
-    function checkWin() {
-      const level = getCurrentLevel();
-      const totalEdges = level.edges.length;
-      const usedCount = Object.values(usedEdges).filter(v => v).length;
-
-      if (usedCount === totalEdges) {
-        levelCleared = true;
-        updateInfo("축하합니다! 모든 다리를 한 번씩만 지나갔습니다! ✅");
-        // 1~4 스테이지일 때만 다음 스테이지 버튼 등장
-        if (level.id <= 4) {
-          nextBtn.style.display = "inline-block";
-        }
-        return true;
-      }
-      return false;
-    }
-
-    // ===== 노드 클릭 처리 =====
-    function onCanvasClick(event) {
-      const level = getCurrentLevel();
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      const clickedNode = level.nodes.find(n => {
-        const dx = x - n.x;
-        const dy = y - n.y;
-        return Math.sqrt(dx * dx + dy * dy) <= 20;
-      });
-
-      if (!clickedNode) {
-        return;
-      }
-
-      if (clickedNode.id === currentNodeId) {
-        updateInfo("이미 그 섬에 서 있습니다. 다른 섬을 눌러 보세요.");
-        return;
-      }
-
-      const candidateEdges = level.edges.filter(e => {
-        const connected =
-          (e.a === currentNodeId && e.b === clickedNode.id) ||
-          (e.b === currentNodeId && e.a === clickedNode.id);
-        return connected && !usedEdges[e.id];
-      });
-
-      if (candidateEdges.length === 0) {
-        updateInfo("이 두 섬 사이에 더 이상 사용할 수 있는 다리가 없습니다.");
-        return;
-      }
-
-      const edgeToUse = candidateEdges[0];
-      usedEdges[edgeToUse.id] = true;
-      currentNodeId = clickedNode.id;
-
-      draw();
-      if (!checkWin()) {
-        updateInfo();
-      }
-    }
-
-    // ===== 치트 기능 =====
-    // ` + Enter  → 자동 클리어
-    // ` + ←      → 이전 스테이지
-    // ` + →      → 다음 스테이지
-    function cheatAutoClear() {
-      const level = getCurrentLevel();
-      level.edges.forEach(e => {
-        usedEdges[e.id] = true;
-      });
-      draw();
-      checkWin(); // 5스테이지도 그냥 "클리어된 것처럼" 처리됨 (치트니까)
-    }
-
-    function cheatGoPrev() {
-      let idx = currentLevelIndex - 1;
-      if (idx < 0) idx = levels.length - 1;
-      initLevel(idx);
-    }
-
-    function cheatGoNext() {
-      let idx = currentLevelIndex + 1;
-      if (idx >= levels.length) idx = 0;
-      initLevel(idx);
-    }
-
-    document.addEventListener("keydown", (e) => {
-      // 게임 시작 전에는 치트 무시
-      if (gameContainer.style.display === "none") return;
-
-      if (e.key === "`") {
-        cheatArmed = true;
-        return;
-      }
-
-      if (!cheatArmed) return;
-
-      if (e.key === "Enter") {
-        cheatAutoClear();
-      } else if (e.key === "ArrowLeft") {
-        cheatGoPrev();
-      } else if (e.key === "ArrowRight") {
-        cheatGoNext();
-      }
-
-      cheatArmed = false;
-    });
-
-    // ===== 버튼 이벤트 =====
-    nextBtn.addEventListener("click", () => {
-      const level = getCurrentLevel();
-      if (!levelCleared || level.id >= 5) {
-        return;
-      }
-      let nextIndex = currentLevelIndex + 1;
-      if (nextIndex >= levels.length) nextIndex = 0;
-      initLevel(nextIndex);
-    });
-
-    resetBtn.addEventListener("click", () => {
-      const level = getCurrentLevel();
-
-      if (level.id === 5) {
-        stage5ResetCount++;
-        if (stage5ResetCount >= 5) {
-          // 포기 오버레이 띄우기
-          overlay.style.display = "flex";
-        }
-      }
-
-      initLevel(currentLevelIndex);
-    });
-
-    canvas.addEventListener("click", onCanvasClick);
-
-    // ===== 포기 오버레이 버튼 =====
-    giveupCancelBtn.addEventListener("click", () => {
-      overlay.style.display = "none";
-    });
-
-    giveupConfirmBtn.addEventListener("click", () => {
-      overlay.style.display = "none";
-      // 결과/해설 오버레이 띄우기
-      resultOverlay.style.display = "flex";
-    });
-
-    // ===== 결과/해설 오버레이 버튼 =====
-    resultCloseBtn.addEventListener("click", () => {
-      resultOverlay.style.display = "none";
-      // 처음 스테이지로 이동
-      initLevel(0);
-    });
-
-    // ===== 시작 버튼 =====
-    startBtn.addEventListener("click", () => {
-      startScreen.style.display = "none";
-      gameContainer.style.display = "inline-block";
-      initLevel(0);
-    });
-  </script>
+</script>
 </body>
 </html>
