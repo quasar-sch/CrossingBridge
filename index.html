@@ -84,10 +84,19 @@
       color: white;
     }
 
-    /* 게임 컨테이너 */
+    /* 게임 컨테이너: 세로 정렬 */
     #game-container {
-      display: inline-block;
       margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px; /* 캔버스-설명-버튼 사이 간격 */
+    }
+
+    #overlay-wrapper {
+      position: relative;
+      width: 600px;
+      height: 400px;
     }
 
     #canvas {
@@ -101,9 +110,7 @@
 
     /* info 패널: 캔버스 바로 아래 */
     #info {
-      margin-top: 14px;
       width: 600px;
-      display: inline-block;
       text-align: left;
       background: #ffffff;
       border-radius: 10px;
@@ -114,13 +121,14 @@
     }
 
     .btn-group {
-      margin-top: 12px;
-      text-align: right;
       width: 600px;
-      display: inline-block;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 24px;
     }
 
-    /* 오버레이 (포기/해설) */
+    /* 오버레이 (포기/해설) - 캔버스 위에만 */
     #overlay,
     #result-overlay {
       position: absolute;
@@ -152,12 +160,6 @@
     .overlay-buttons {
       margin-top: 16px;
       text-align: right;
-    }
-
-    /* 오버레이가 캔버스 위에만 뜨도록 */
-    #overlay-wrapper {
-      position: relative;
-      display: inline-block;
     }
   </style>
 </head>
@@ -261,7 +263,7 @@ const levels = [
       { id:5,a:2,b:3 },
       { id:6,a:3,b:4 }
     ],
-    startNode: 2   // Euler 경로 시작점
+    startNode: 2
   },
   {
     id: 3,
@@ -286,7 +288,7 @@ const levels = [
       { id:7,a:2,b:5 },
       { id:8,a:0,b:2 }
     ],
-    startNode: 3   // Euler 경로 시작점
+    startNode: 3
   },
   {
     id: 4,
@@ -427,7 +429,7 @@ function drawRiver(level) {
 }
 
 /* ===========================
-   곡선 다리 그리기
+   곡선 다리
 =========================== */
 
 function drawCurve(A, B, offset) {
@@ -452,7 +454,7 @@ function drawCurve(A, B, offset) {
 }
 
 /* ===========================
-   전체 그리기
+   그리기
 =========================== */
 
 function draw() {
@@ -472,18 +474,18 @@ function draw() {
 
     const used = usedEdges[e.id];
     ctx.lineWidth = 5;
-    ctx.strokeStyle = used ? "#bdbdbd" : "#1565c0"; // 회색 / 파랑
+    ctx.strokeStyle = used ? "#bdbdbd" : "#1565c0";
 
     const offset = e.offsetIndex || 0;
     drawCurve(A, B, offset);
     ctx.stroke();
   });
 
-  // 섬(노드)
+  // 섬
   level.nodes.forEach(n => {
     ctx.beginPath();
     ctx.arc(n.x, n.y, 18, 0, Math.PI * 2);
-    ctx.fillStyle = (n.id === currentNodeId) ? "#ffeb3b" : "#ffffff"; // 현재 위치 노랑
+    ctx.fillStyle = (n.id === currentNodeId) ? "#ffeb3b" : "#ffffff";
     ctx.fill();
     ctx.lineWidth = 2;
     ctx.strokeStyle = "#424242";
@@ -588,7 +590,7 @@ canvas.addEventListener("click", (event) => {
 });
 
 /* ===========================
-   치트 기능 (` + Enter / ← / →)
+   치트 (` + Enter / ← / →)
 =========================== */
 
 function animateClear() {
@@ -629,7 +631,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ===========================
-   리셋 버튼
+   리셋
 =========================== */
 
 resetBtn.addEventListener("click", () => {
@@ -647,22 +649,19 @@ resetBtn.addEventListener("click", () => {
 });
 
 /* ===========================
-   다음 스테이지 버튼 (버그 수정!)
+   다음 스테이지 (조건 단순화)
 =========================== */
 
 nextBtn.addEventListener("click", () => {
-  const level = getLevel();
-  if (!levelCleared) return;       // 클리어 안 했으면 무시
-  if (level.id >= 5) return;       // 5스테이지 이후는 없음
-
-  const nextIndex = currentLevelIndex + 1;
-  if (nextIndex < levels.length) {
-    initLevel(nextIndex);
+  // 어차피 버튼은 클리어 후에만 보이도록 했으므로
+  // 여기서는 그냥 다음 스테이지로 넘겨버린다.
+  if (currentLevelIndex < levels.length - 1) {
+    initLevel(currentLevelIndex + 1);
   }
 });
 
 /* ===========================
-   오버레이 버튼
+   오버레이
 =========================== */
 
 giveupCancel.addEventListener("click", () => {
@@ -685,7 +684,7 @@ resultClose.addEventListener("click", () => {
 
 startBtn.addEventListener("click", () => {
   startScreen.style.display = "none";
-  gameContainer.style.display = "inline-block";
+  gameContainer.style.display = "flex";
   initLevel(0);
 });
 </script>
