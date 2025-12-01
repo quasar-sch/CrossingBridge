@@ -2,129 +2,171 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>다리 건너기 퍼즐</title>
+  <title>다리 건너기 퍼즐 - Dark Edition</title>
+
+  <!-- 고급스럽고 깔끔한 한국어 서체 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard/dist/web/static/pretendard.css" />
+
   <style>
     body {
-      font-family: sans-serif;
+      font-family: "Pretendard", sans-serif;
       text-align: center;
-      margin: 20px;
+      margin: 0;
+      padding: 0;
+      background: #0d1117; /* Github 다크테마 느낌 */
+      color: #e6edf3;
     }
+
+    /* 공통 버튼 스타일 */
+    button {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      background: #238636; /* GitHub 그린 버튼 */
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #2ea043;
+    }
+    #next { background: #0969da; }
+    #next:hover { background: #1a7fdb; }
+    #reset { background: #6e7681; }
+    #reset:hover { background: #8c939d; }
+
+    /* 시작 화면 */
+    #start-screen {
+      margin-top: 120px;
+    }
+    .start-title {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    .start-sub {
+      font-size: 18px;
+      margin-bottom: 30px;
+      color: #8b949e;
+    }
+    .primary-btn {
+      padding: 16px 30px;
+      font-size: 20px;
+      border-radius: 10px;
+      background: #0969da;
+    }
+
+    /* 게임 컨테이너 */
     #game-container {
       display: inline-block;
-      position: relative;
+      margin-top: 30px;
     }
+
     #canvas {
-      border: 1px solid #333;
-      background: #eef;
-      cursor: pointer;
-    }
-    #info {
-      margin-top: 10px;
-      max-width: 600px;
-      text-align: left;
-      font-size: 14px;
-    }
-    .btn-group {
-      margin-top: 10px;
-    }
-    button {
-      margin: 0 4px;
-      padding: 6px 10px;
-      cursor: pointer;
-    }
-    /* 오버레이 */
-    #overlay,
-    #result-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
+      border-radius: 14px;
+      background: #161b22; /* 어두운 캔버스 */
       width: 600px;
       height: 400px;
-      background: rgba(0, 0, 0, 0.6);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+      cursor: pointer;
+    }
+
+    /* 정보 패널 */
+    #info {
+      margin-top: 16px;
+      background: #21262d;
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 15px;
+      text-align: left;
+      width: 560px;
+      display: inline-block;
+      color: #c9d1d9;
+    }
+
+    .btn-group { margin-top: 12px; }
+
+    /* 오버레이 (포기/해설) */
+    #overlay, #result-overlay {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 100%;
+      height: 100%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.7);
       display: none;
       align-items: center;
       justify-content: center;
-      color: #fff;
       z-index: 10;
     }
     .overlay-box {
-      background: #ffffff;
-      color: #000;
-      padding: 16px 20px;
-      border-radius: 8px;
-      max-width: 520px;
+      background: #161b22;
+      color: #e6edf3;
+      padding: 20px 26px;
+      border-radius: 12px;
+      width: 380px;
       text-align: left;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     .overlay-buttons {
-      margin-top: 10px;
+      margin-top: 20px;
       text-align: right;
-    }
-    /* 시작 화면 */
-    #start-screen {
-      margin-top: 40px;
     }
   </style>
 </head>
 <body>
 
-<h1>다리 건너기 퍼즐</h1>
-
 <!-- 시작 화면 -->
 <div id="start-screen">
-  <p>
-    섬과 섬을 잇는 다리를 <strong>딱 한 번씩만</strong> 지나가 보세요.<br>
-    한붓그리기가 가능한 스테이지도 있고, 불가능한 스테이지도 있습니다.
-  </p>
-  <button id="start-btn">시작하기</button>
+  <div class="start-title">다리 건너기 퍼즐</div>
+  <div class="start-sub">모든 다리를 <strong>단 한 번씩</strong> 건너라</div>
+  <button class="primary-btn" id="start-btn">게임 시작</button>
 </div>
 
 <!-- 게임 화면 -->
 <div id="game-container" style="display:none;">
   <canvas id="canvas" width="600" height="400"></canvas>
 
-  <!-- 포기 확인 -->
+  <!-- 포기 오버레이 -->
   <div id="overlay">
     <div class="overlay-box">
-      <h2>포기하시겠습니까?</h2>
-      <p>
-        이 스테이지는 수학적으로도 한붓그리기가 불가능한 그래프입니다.<br>
-        지금 포기하고 해설을 볼 수 있습니다.
-      </p>
+      <h3>포기하시겠습니까?</h3>
+      <p>이 스테이지(5)는 수학적으로 한붓그리기가 불가능합니다.</p>
       <div class="overlay-buttons">
         <button id="giveup-cancel">아니요</button>
-        <button id="giveup-confirm">네, 해설 보기</button>
+        <button id="giveup-confirm">해설 보기</button>
       </div>
     </div>
   </div>
 
-  <!-- 스테이지 5 해설 -->
+  <!-- 해설 오버레이 -->
   <div id="result-overlay">
     <div class="overlay-box">
-      <h2>쾨니히스베르크의 다리 - 왜 못 깰까?</h2>
-      <p>
-        이 그래프는 역사적으로 유명한 '쾨니히스베르크의 다리' 문제입니다.
-        모든 다리를 <strong>한 번씩만</strong> 지나가고 싶었지만,
-        실제로는 불가능합니다.
-      </p>
-      <p>홀수 차수 정점이 4개 → 한붓그리기 절대 불가능</p>
+      <h3>쾨니히스베르크의 다리</h3>
+      <p>홀수 차수 정점이 4개 → 한붓그리기 불가능.</p>
+      <p>즉, 절대 깰 수 없는 스테이지입니다.</p>
       <div class="overlay-buttons">
-        <button id="result-close">처음 스테이지로</button>
+        <button id="result-close">처음으로</button>
       </div>
     </div>
   </div>
 
   <div id="info"></div>
+
   <div class="btn-group">
-    <button id="reset">현재 스테이지 리셋</button>
+    <button id="reset">스테이지 리셋</button>
     <button id="next" style="display:none;">다음 스테이지</button>
   </div>
 </div>
 
 <script>
-/* ===========================
-    스테이지 설정
-=========================== */
+/* ======================================
+       스테이지 데이터 (다크테마 동일)
+====================================== */
+
 const levels = [
   {
     id: 1,
@@ -137,84 +179,84 @@ const levels = [
       { id: 3, x: 180, y: 280 }
     ],
     edges: [
-      { id: 0, a:0, b:1 },
-      { id: 1, a:1, b:2 },
-      { id: 2, a:2, b:3 },
-      { id: 3, a:3, b:0 },
-      { id: 4, a:0, b:2 }
+      { id:0,a:0,b:1 },
+      { id:1,a:1,b:2 },
+      { id:2,a:2,b:3 },
+      { id:3,a:3,b:0 },
+      { id:4,a:0,b:2 }
     ],
     startNode: 0
   },
 
   {
     id: 2,
-    title: "Stage 2 - 별 모양 그래프",
-    description: "스타형 그래프.",
+    title: "Stage 2 - 별 그래프",
+    description: "교차가 많은 별 형태",
     nodes: [
-      { id: 0, x:300, y:200 },
-      { id: 1, x:140, y:120 },
-      { id: 2, x:460, y:120 },
-      { id: 3, x:460, y:280 },
-      { id: 4, x:140, y:280 }
+      { id:0,x:300,y:200 },
+      { id:1,x:140,y:120 },
+      { id:2,x:460,y:120 },
+      { id:3,x:460,y:280 },
+      { id:4,x:140,y:280 }
     ],
     edges: [
-      { id:0, a:0, b:1 },
-      { id:1, a:0, b:2 },
-      { id:2, a:0, b:3 },
-      { id:3, a:0, b:4 },
-      { id:4, a:1, b:2 },
-      { id:5, a:2, b:3 },
-      { id:6, a:3, b:4 }
+      { id:0,a:0,b:1 },
+      { id:1,a:0,b:2 },
+      { id:2,a:0,b:3 },
+      { id:3,a:0,b:4 },
+      { id:4,a:1,b:2 },
+      { id:5,a:2,b:3 },
+      { id:6,a:3,b:4 }
     ],
-    startNode: 2   // ★ 수정
+    startNode: 2
   },
 
   {
     id: 3,
     title: "Stage 3 - 육각형 미로",
-    description: "복잡한 육각 구조.",
+    description: "복잡한 육각 구조입니다.",
     nodes: [
-      { id:0, x:300, y:80 },
-      { id:1, x:440, y:140 },
-      { id:2, x:440, y:260 },
-      { id:3, x:300, y:320 },
-      { id:4, x:160, y:260 },
-      { id:5, x:160, y:140 }
+      { id:0,x:300,y:80 },
+      { id:1,x:440,y:140 },
+      { id:2,x:440,y:260 },
+      { id:3,x:300,y:320 },
+      { id:4,x:160,y:260 },
+      { id:5,x:160,y:140 }
     ],
     edges: [
-      { id:0, a:0,b:1 },
-      { id:1, a:1,b:2 },
-      { id:2, a:2,b:3 },
-      { id:3, a:3,b:4 },
-      { id:4, a:4,b:5 },
-      { id:5, a:5,b:0 },
-      { id:6, a:0,b:3 },
-      { id:7, a:2,b:5 },
-      { id:8, a:0,b:2 }
+      { id:0,a:0,b:1 },
+      { id:1,a:1,b:2 },
+      { id:2,a:2,b:3 },
+      { id:3,a:3,b:4 },
+      { id:4,a:4,b:5 },
+      { id:5,a:5,b:0 },
+      { id:6,a:0,b:3 },
+      { id:7,a:2,b:5 },
+      { id:8,a:0,b:2 }
     ],
-    startNode: 3   // ★ 수정
+    startNode: 3
   },
 
   {
     id: 4,
     title: "Stage 4 - 교차 다리",
-    description: "많은 교차 다리.",
+    description: "교차가 매우 많은 까다로운 그래프.",
     nodes: [
-      { id:0, x:140, y:120 },
-      { id:1, x:460, y:120 },
-      { id:2, x:460, y:280 },
-      { id:3, x:140, y:280 }
+      { id:0,x:140,y:120 },
+      { id:1,x:460,y:120 },
+      { id:2,x:460,y:280 },
+      { id:3,x:140,y:280 }
     ],
     edges: [
-      { id:0, a:0,b:1 },
-      { id:1, a:1,b:2 },
-      { id:2, a:2,b:3 },
-      { id:3, a:3,b:0 },
-      { id:4, a:0,b:2 },
-      { id:5, a:0,b:2 },
-      { id:6, a:1,b:3 },
-      { id:7, a:1,b:3 },
-      { id:8, a:0,b:1 }
+      { id:0,a:0,b:1 },
+      { id:1,a:1,b:2 },
+      { id:2,a:2,b:3 },
+      { id:3,a:3,b:0 },
+      { id:4,a:0,b:2 },
+      { id:5,a:0,b:2 },
+      { id:6,a:1,b:3 },
+      { id:7,a:1,b:3 },
+      { id:8,a:0,b:1 }
     ],
     startNode: 0
   },
@@ -222,65 +264,59 @@ const levels = [
   {
     id: 5,
     title: "Stage 5 - 쾨니히스베르크",
-    description: "역사적 난제, 절대 못 깨는 스테이지.",
+    description: "절대 깰 수 없는 스테이지.",
     nodes: [
-      { id:0, x:300, y:160 }, // 중앙 C
-      { id:1, x:160, y:110 }, // 왼쪽 A
-      { id:2, x:440, y:110 }, // 오른쪽 D
-      { id:3, x:300, y:290 }  // 아래 B
+      { id:0,x:300,y:160 }, // 중앙
+      { id:1,x:160,y:110 }, // 왼쪽
+      { id:2,x:440,y:110 }, // 오른쪽
+      { id:3,x:300,y:290 }  // 아래
     ],
     edges: [
-      { id:0, a:0,b:1 },
-      { id:1, a:0,b:1 },
-      { id:2, a:0,b:2 },
-      { id:3, a:0,b:2 },
-      { id:4, a:0,b:3 },
-      { id:5, a:1,b:3 },
-      { id:6, a:2,b:3 }
+      { id:0,a:0,b:1 },
+      { id:1,a:0,b:1 },
+      { id:2,a:0,b:2 },
+      { id:3,a:0,b:2 },
+      { id:4,a:0,b:3 },
+      { id:5,a:1,b:3 },
+      { id:6,a:2,b:3 }
     ],
     startNode: 0
   }
 ];
 
-/* ===============================
-   전역 상태
-================================*/
-const startScreen = document.getElementById("start-screen");
-const startBtn    = document.getElementById("start-btn");
-
-const gameContainer = document.getElementById("game-container");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+const startScreen = document.getElementById("start-screen");
+const gameContainer = document.getElementById("game-container");
 const nextBtn  = document.getElementById("next");
 const resetBtn = document.getElementById("reset");
 
-const overlay        = document.getElementById("overlay");
-const giveupCancel   = document.getElementById("giveup-cancel");
-const giveupConfirm  = document.getElementById("giveup-confirm");
+const overlay       = document.getElementById("overlay");
+const giveupCancel  = document.getElementById("giveup-cancel");
+const giveupConfirm = document.getElementById("giveup-confirm");
 
-const resultOverlay  = document.getElementById("result-overlay");
-const resultClose    = document.getElementById("result-close");
+const resultOverlay = document.getElementById("result-overlay");
+const resultClose   = document.getElementById("result-close");
 
 const infoDiv = document.getElementById("info");
 
 let currentLevelIndex = 0;
 let usedEdges = {};
-let currentNodeId = null;
+let currentNodeId = 0;
 let levelCleared = false;
 let resetCount = 0;
 
 let cheatArmed = false;
 
-/* ===============================
-   초기화
-================================*/
-function getLevel() {
-  return levels[currentLevelIndex];
-}
+/* ======================================
+        레벨 초기화
+====================================== */
 
-function initLevel(index) {
-  currentLevelIndex = index;
+function getLevel() { return levels[currentLevelIndex]; }
+
+function initLevel(i){
+  currentLevelIndex = i;
   const level = getLevel();
 
   usedEdges = {};
@@ -295,46 +331,22 @@ function initLevel(index) {
   nextBtn.style.display = "none";
 }
 
-/* ===============================
-   곡선 다리 그리기
-================================*/
-function drawCurveEdge(x1,y1,x2,y2,offset=0){
-  const mx = (x1+x2)/2;
-  const my = (y1+y2)/2;
-
-  const dx = x2-x1;
-  const dy = y2-y1;
-  const len = Math.sqrt(dx*dx + dy*dy) || 1;
-
-  const nx = -dy/len;
-  const ny = dx/len;
-
-  const curve = 20 * (offset+1);
-
-  const cx = mx + nx * curve;
-  const cy = my + ny * curve;
-
-  ctx.quadraticCurveTo(cx, cy, x2, y2);
-}
-
-/* ===============================
-   강 모양 (스테이지 별)
-================================*/
+/* ======================================
+        강 그리기 (다크)
+====================================== */
 function drawRiver(level){
   ctx.save();
-  ctx.fillStyle = "#b6e3ff";
+  ctx.fillStyle = "#0f1a28";  /* 어두운 파란 강 */
 
   if(level.id===5){
-    // 위 강
     ctx.beginPath();
     ctx.moveTo(40,100);
-    ctx.quadraticCurveTo(300, 60, 560,100);
+    ctx.quadraticCurveTo(300,60,560,100);
     ctx.lineTo(560,140);
     ctx.quadraticCurveTo(300,110,40,140);
     ctx.closePath();
     ctx.fill();
 
-    // 아래 강
     ctx.beginPath();
     ctx.moveTo(40,220);
     ctx.quadraticCurveTo(300,180,560,220);
@@ -342,8 +354,7 @@ function drawRiver(level){
     ctx.quadraticCurveTo(300,230,40,260);
     ctx.closePath();
     ctx.fill();
-  }
-  else {
+  } else {
     ctx.beginPath();
     ctx.moveTo(80,140);
     ctx.quadraticCurveTo(300,110,520,140);
@@ -355,152 +366,176 @@ function drawRiver(level){
   ctx.restore();
 }
 
-/* ===============================
-   전체 그리기
-================================*/
+/* ======================================
+        다리 (곡선)
+====================================== */
+function drawCurve(A, B, offset){
+  const x1 = A.x, y1 = A.y;
+  const x2 = B.x, y2 = B.y;
+
+  const mx = (x1+x2)/2;
+  const my = (y1+y2)/2;
+
+  const dx = x2-x1;
+  const dy = y2-y1;
+  const len = Math.sqrt(dx*dx+dy*dy)||1;
+  const nx = -dy/len;
+  const ny = dx/len;
+
+  const curve = 18 * (offset+1);
+
+  const cx = mx + nx*curve;
+  const cy = my + ny*curve;
+
+  ctx.quadraticCurveTo(cx,cy,x2,y2);
+}
+
+/* ======================================
+        전체 그리기
+====================================== */
 function draw(){
   const level = getLevel();
+
   ctx.clearRect(0,0,600,400);
 
   drawRiver(level);
 
   // 다리
   level.edges.forEach(e=>{
-    const A = level.nodes.find(n=>n.id===e.a);
-    const B = level.nodes.find(n=>n.id===e.b);
+    const A = level.nodes.find(n => n.id===e.a);
+    const B = level.nodes.find(n => n.id===e.b);
 
     ctx.beginPath();
     ctx.moveTo(A.x, A.y);
 
-    const offset = e.offsetIndex || 0;
+    const used = usedEdges[e.id];
     ctx.lineWidth = 5;
-    ctx.strokeStyle = usedEdges[e.id] ? "#999" : "#004488";
+    ctx.strokeStyle = used ? "#434c56" : "#00b8d9";  // 사용된 다리 어두운 회색 / 미사용: 밝은 청록
 
-    drawCurveEdge(A.x, A.y, B.x, B.y, offset);
+    const offset = e.offsetIndex || 0;
+    drawCurve(A,B,offset);
     ctx.stroke();
   });
 
   // 섬
   level.nodes.forEach(n=>{
     ctx.beginPath();
-    ctx.arc(n.x, n.y, 18, 0, Math.PI*2);
-    ctx.fillStyle = (n.id===currentNodeId) ? "#ffdd55" : "#fff";
+    ctx.arc(n.x,n.y,18,0,Math.PI*2);
+    ctx.fillStyle = (n.id===currentNodeId) ? "#f1c40f" : "#d0d7de";
     ctx.fill();
     ctx.strokeStyle="#333";
     ctx.lineWidth=2;
     ctx.stroke();
 
-    ctx.fillStyle="#000";
-    ctx.font="14px sans-serif";
+    ctx.fillStyle="#111";
+    ctx.font="14px Pretendard";
     ctx.textAlign="center";
     ctx.textBaseline="middle";
     ctx.fillText(n.id, n.x, n.y);
   });
 }
 
-/* ===============================
-   정보 출력
-================================*/
+/* ======================================
+        정보 UI
+====================================== */
 function updateInfo(msg=""){
-  const level = getLevel();
-  const total = level.edges.length;
+  const l = getLevel();
+  const total = l.edges.length;
   const used  = Object.values(usedEdges).filter(v=>v).length;
 
-  let txt = `
-    <strong>${level.title}</strong><br>
-    ${level.description}<br><br>
+  let t = `
+    <strong>${l.title}</strong><br>
+    ${l.description}<br><br>
     사용한 다리: ${used} / ${total}<br>
     현재 위치한 섬: ${currentNodeId}<br>
   `;
-  if(msg) txt += `<p style="color:#c00">${msg}</p>`;
+  if(msg) t += `<p style="color:#ff7675">${msg}</p>`;
 
-  if(levelCleared && level.id <=4){
-    txt += `<p style="color:#007700;"><strong>클리어! 다음 스테이지 버튼 활성화!</strong></p>`;
+  if(levelCleared && l.id<=4){
+    t += `<p style="color:#2ecc71"><strong>클리어! 다음 스테이지로 이동 가능</strong></p>`;
   }
 
-  infoDiv.innerHTML = txt;
+  infoDiv.innerHTML = t;
 }
 
-/* ===============================
-   승리 조건 체크
-================================*/
+/* ======================================
+        승리 체크
+====================================== */
 function checkWin(){
-  const level = getLevel();
-  const total = level.edges.length;
-  const used  = Object.values(usedEdges).filter(v=>v).length;
-
+  const l = getLevel();
+  const total = l.edges.length;
+  const used = Object.values(usedEdges).filter(v=>v).length;
   if(used===total){
     levelCleared = true;
-    updateInfo("축하합니다! 모든 다리를 지나갔습니다!");
-    if(level.id<=4) nextBtn.style.display="inline-block";
+    updateInfo("🎉 모든 다리를 한 번씩 지나갔습니다!");
+    if(l.id<=4) nextBtn.style.display="inline-block";
     return true;
   }
   return false;
 }
 
-/* ===============================
-   노드 클릭
-================================*/
+/* ======================================
+        캔버스 클릭
+====================================== */
 canvas.addEventListener("click", ev=>{
-  const level = getLevel();
-  const rect  = canvas.getBoundingClientRect();
+  const l = getLevel();
+  const rect = canvas.getBoundingClientRect();
+
   const x = ev.clientX - rect.left;
   const y = ev.clientY - rect.top;
 
-  const clicked = level.nodes.find(n=>Math.hypot(n.x-x, n.y-y)<=20);
+  const clicked = l.nodes.find(n => Math.hypot(n.x-x, n.y-y)<=20);
   if(!clicked) return;
 
-  if(clicked.id === currentNodeId){
+  if(clicked.id===currentNodeId){
     updateInfo("이미 그 섬입니다.");
     return;
   }
 
-  const usable = level.edges.filter(e=>{
-    const c =
+  const edges = l.edges.filter(e=>{
+    const ok =
       (e.a===currentNodeId && e.b===clicked.id) ||
       (e.b===currentNodeId && e.a===clicked.id);
-    return c && !usedEdges[e.id];
+    return ok && !usedEdges[e.id];
   });
 
-  if(usable.length===0){
-    updateInfo("사용 가능한 다리가 없습니다.");
+  if(edges.length===0){
+    updateInfo("더 이상 건널 수 있는 다리가 없습니다.");
     return;
   }
 
-  const edge = usable[0];
-  usedEdges[edge.id] = true;
+  usedEdges[edges[0].id] = true;
   currentNodeId = clicked.id;
 
   draw();
   if(!checkWin()) updateInfo();
 });
 
-/* ===============================
-   치트 기능 (` + Enter)
-================================*/
+/* ======================================
+        치트 (자동그리기)
+====================================== */
 function animateClear(){
-  const level = getLevel();
+  const l = getLevel();
   let i = 0;
 
   function step(){
-    if(i>=level.edges.length){
+    if(i >= l.edges.length){
       checkWin();
       return;
     }
-    usedEdges[level.edges[i].id] = true;
+    usedEdges[l.edges[i].id] = true;
     draw();
     i++;
-    setTimeout(step, 150);
+    setTimeout(step, 130);
   }
   step();
 }
 
-document.addEventListener("keydown",e=>{
+document.addEventListener("keydown", e=>{
   if(gameContainer.style.display==="none") return;
 
   if(e.key==="`"){
-    cheatArmed = true;
-    return;
+    cheatArmed = true; return;
   }
   if(!cheatArmed) return;
 
@@ -515,13 +550,12 @@ document.addEventListener("keydown",e=>{
   cheatArmed = false;
 });
 
-/* ===============================
-   리셋 버튼 (스테이지 5 포기)
-================================*/
+/* ======================================
+        리셋 버튼
+====================================== */
 resetBtn.addEventListener("click", ()=>{
-  const level = getLevel();
-
-  if(level.id===5){
+  const l = getLevel();
+  if(l.id===5){
     resetCount++;
     if(resetCount>=5){
       overlay.style.display="flex";
@@ -531,30 +565,28 @@ resetBtn.addEventListener("click", ()=>{
   initLevel(currentLevelIndex);
 });
 
-/* 포기창 */
-giveupCancel.addEventListener("click", ()=>{
-  overlay.style.display="none";
-});
+/* ======================================
+        오버레이 버튼
+====================================== */
+giveupCancel.addEventListener("click", ()=> overlay.style.display="none");
 giveupConfirm.addEventListener("click", ()=>{
   overlay.style.display="none";
   resultOverlay.style.display="flex";
 });
-
-/* 해설창 */
 resultClose.addEventListener("click", ()=>{
   resultOverlay.style.display="none";
   initLevel(0);
 });
 
-/* ===============================
-   시작 버튼
-================================*/
-startBtn.addEventListener("click", ()=>{
+/* ======================================
+        시작 버튼
+====================================== */
+document.getElementById("start-btn").addEventListener("click", ()=>{
   startScreen.style.display="none";
   gameContainer.style.display="inline-block";
   initLevel(0);
 });
-
 </script>
+
 </body>
 </html>
