@@ -1,721 +1,919 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>다리 건너기 퍼즐</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard/dist/web/static/pretendard.css" />
-  <style>
-    body {
-      font-family: "Pretendard", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f5f5f5;
-      color: #222;
-      text-align: center;
-    }
-
-    h1 {
-      margin-top: 24px;
-      margin-bottom: 8px;
-    }
-
-    /* 시작 화면 */
-    #start-screen {
-      margin-top: 120px;
-    }
-    .start-title {
-      font-size: 42px;
-      font-weight: 700;
-      margin-bottom: 12px;
-    }
-    .start-sub {
-      font-size: 18px;
-      color: #555;
-      margin-bottom: 28px;
-    }
-    .primary-btn {
-      padding: 14px 26px;
-      font-size: 18px;
-      border-radius: 10px;
-      border: none;
-      background: #1976d2;
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .primary-btn:hover {
-      background: #115293;
-    }
-
-    /* 버튼 공통 */
-    button {
-      font-family: inherit;
-    }
-    #reset, #next, #giveup-cancel, #giveup-confirm, #result-close {
-      padding: 10px 18px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      transition: 0.2s;
-    }
-    #reset {
-      background: #9e9e9e;
-      color: white;
-    }
-    #reset:hover { background: #757575; }
-    #next {
-      background: #1976d2;
-      color: white;
-    }
-    #next:hover { background: #115293; }
-    #giveup-cancel {
-      background: #9e9e9e;
-      color: white;
-    }
-    #giveup-confirm {
-      background: #d32f2f;
-      color: white;
-    }
-    #result-close {
-      background: #1976d2;
-      color: white;
-    }
-
-    /* 게임 컨테이너: 세로 정렬 */
-    #game-container {
-      margin-top: 24px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    #overlay-wrapper {
-      position: relative;
-      width: 600px;
-      height: 400px;
-    }
-
-    #canvas {
-      width: 600px;
-      height: 400px;
-      background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-      cursor: pointer;
-    }
-
-    /* info 패널: 캔버스 바로 아래 */
-    #info {
-      width: 600px;
-      text-align: left;
-      background: #ffffff;
-      border-radius: 10px;
-      padding: 12px 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      font-size: 14px;
-      color: #333;
-    }
-
-    .btn-group {
-      width: 600px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-bottom: 24px;
-    }
-
-    /* 오버레이 (포기/해설) - 캔버스 위에만 */
-    #overlay,
-    #result-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 600px;
-      height: 400px;
-      background: rgba(0,0,0,0.55);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      border-radius: 12px;
-    }
-    .overlay-box {
-      background: #ffffff;
-      color: #222;
-      padding: 18px 22px;
-      border-radius: 10px;
-      width: 360px;
-      text-align: left;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.25);
-      font-size: 14px;
-    }
-    .overlay-box h3 {
-      margin-top: 0;
-      margin-bottom: 8px;
-    }
-    .overlay-buttons {
-      margin-top: 16px;
-      text-align: right;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>한붓그리기 퍼즐</title>
+<style>
+  :root{
+    --bg1:#eef5ff;
+    --bg2:#f9fbff;
+    --panel:#ffffffdd;
+    --line:#b7c3da;
+    --line-used:#377dff;
+    --line-active:#8fb4ff;
+    --node:#ffffff;
+    --node-border:#51607d;
+    --node-current:#377dff;
+    --node-valid:#8bc34a;
+    --danger:#ff6b6b;
+    --text:#1d2a44;
+    --muted:#6d7b98;
+    --shadow:0 12px 28px rgba(44,62,103,.16);
+    --radius:22px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;color:var(--text);background:linear-gradient(180deg,var(--bg1),var(--bg2));overflow:hidden}
+  button{font:inherit}
+  .app{
+    height:100dvh;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    gap:10px;
+    padding:12px;
+  }
+  .topbar{
+    display:grid;
+    grid-template-columns:1.1fr .9fr auto;
+    gap:10px;
+    align-items:stretch;
+  }
+  .card{
+    background:var(--panel);
+    backdrop-filter: blur(8px);
+    border:1px solid rgba(255,255,255,.65);
+    box-shadow:var(--shadow);
+    border-radius:var(--radius);
+  }
+  .title-card{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+  .title-wrap{min-width:0}
+  .stage-label{font-size:13px;font-weight:800;color:var(--muted);margin-bottom:2px}
+  .goal{font-size:clamp(20px,2.5vw,28px);font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .subtext{font-size:12px;color:var(--muted)}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:8px}
+  .stat{padding:8px 10px;border-radius:18px;background:#f5f8ff;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:74px}
+  .stat .k{font-size:12px;color:var(--muted);font-weight:700}
+  .stat .v{font-size:clamp(17px,2.2vw,24px);font-weight:900;margin-top:3px}
+  .actions{display:flex;gap:8px;align-items:center;padding:8px}
+  .btn{
+    border:none;
+    border-radius:16px;
+    padding:11px 14px;
+    background:#eff4ff;
+    color:var(--text);
+    font-weight:800;
+    cursor:pointer;
+    transition:transform .16s ease, background .16s ease, box-shadow .16s ease;
+    box-shadow:0 5px 14px rgba(55,125,255,.08);
+  }
+  .btn:hover{transform:translateY(-1px);background:#e5eeff}
+  .btn:active{transform:translateY(0)}
+  .btn.primary{background:linear-gradient(135deg,#377dff,#5c9cff);color:white}
+  .btn.primary:hover{background:linear-gradient(135deg,#2f73f0,#4f91f7)}
+  .btn.warn{background:#fff1f1;color:#c94747}
+  .btn.warn.pulse{animation:pulseWarn .7s ease-in-out 1}
+  .btn.ghost{background:white}
+  .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+  .board-wrap{position:relative;min-height:0;padding:10px}
+  .board-card{height:100%;padding:10px;display:grid;grid-template-rows:1fr auto;gap:10px;min-height:0}
+  .board-area{position:relative;min-height:0;border-radius:22px;overflow:hidden;background:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,.9), rgba(255,255,255,.75) 30%, rgba(230,239,255,.8) 70%),
+      linear-gradient(180deg,#fafdff,#f1f6ff);
+    border:1px solid #e6eefc;
+  }
+  svg{width:100%;height:100%;display:block}
+  .edge{
+    fill:none;stroke:var(--line);stroke-width:8;stroke-linecap:round;vector-effect:non-scaling-stroke;
+    transition:stroke .22s ease, opacity .22s ease, filter .22s ease;
+  }
+  .edge.used{stroke:var(--line-used);filter:drop-shadow(0 0 6px rgba(55,125,255,.32))}
+  .edge.valid{stroke:var(--line-active);opacity:.9}
+  .edge.dim{opacity:.45}
+  .node{cursor:pointer;transition:transform .18s ease}
+  .node circle.main{fill:var(--node);stroke:var(--node-border);stroke-width:4;vector-effect:non-scaling-stroke;transition:fill .18s ease, stroke .18s ease, filter .18s ease}
+  .node circle.ring{fill:none;stroke:transparent;stroke-width:12;vector-effect:non-scaling-stroke;transition:stroke .18s ease, opacity .18s ease}
+  .node text{font-size:16px;font-weight:900;fill:var(--text);pointer-events:none;user-select:none}
+  .node.current circle.main{fill:#eef4ff;stroke:var(--node-current);filter:drop-shadow(0 0 10px rgba(55,125,255,.25))}
+  .node.current circle.ring{stroke:rgba(55,125,255,.18)}
+  .node.valid circle.main{stroke:var(--node-valid)}
+  .node.valid circle.ring{stroke:rgba(139,195,74,.24)}
+  .node.invalid circle.main{stroke:var(--danger)}
+  .travel-dot{fill:#377dff;filter:drop-shadow(0 0 8px rgba(55,125,255,.35));pointer-events:none}
+  .hint-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 4px 2px;font-size:13px;color:var(--muted);font-weight:700}
+  .hint-pill{padding:9px 12px;border-radius:999px;background:#f4f7ff;display:inline-flex;gap:8px;align-items:center}
+  .hidden{display:none !important}
+  .screen,.modal{
+    position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(18,31,56,.36);backdrop-filter: blur(8px);z-index:30;
+  }
+  .screen-card,.modal-card{
+    width:min(760px,100%);
+    background:white;border-radius:28px;padding:26px;box-shadow:0 22px 60px rgba(17,31,61,.25);
+  }
+  .screen-card h1,.screen-card h2,.modal-card h3{margin:0 0 10px}
+  .screen-card p,.modal-card p{margin:0;color:#53627f;line-height:1.55}
+  .screen-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .list{display:grid;gap:10px;margin-top:18px}
+  .summary-item{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;background:#f7faff;border-radius:18px;padding:12px 14px}
+  .summary-item .name{font-weight:900}
+  .summary-item .meta{font-size:14px;color:#5f7092;font-weight:800}
+  .kbd{padding:2px 7px;border-radius:999px;background:#f3f6fc;border:1px solid #dde7fb;font-size:12px;font-weight:900;color:#5871a5}
+  .logo{width:70px;height:70px;border-radius:22px;background:linear-gradient(135deg,#377dff,#81b4ff);display:grid;place-items:center;color:white;font-size:34px;box-shadow:0 12px 24px rgba(55,125,255,.22)}
+  .tiny{font-size:12px;color:#7a86a0}
+  .explain{margin-top:16px;padding:14px;border-radius:18px;background:#f7faff;border:1px solid #e2ebff}
+  @keyframes pulseWarn{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+  @media (max-width: 980px){
+    .topbar{grid-template-columns:1fr;}
+    .stats{grid-template-columns:repeat(3,1fr)}
+    .actions{justify-content:flex-start;flex-wrap:wrap}
+  }
+  @media (max-width: 640px){
+    .app{padding:10px;gap:8px}
+    .title-card{padding:10px 12px}
+    .stats{padding:6px;gap:6px}
+    .stat{min-height:64px}
+    .actions{padding:6px;gap:6px}
+    .btn{padding:10px 12px;border-radius:14px}
+    .screen-card,.modal-card{padding:20px}
+    .summary-item{grid-template-columns:1fr;justify-items:start}
+  }
+</style>
 </head>
 <body>
-
-<h1>다리 건너기 퍼즐</h1>
-
-<!-- 시작 화면 -->
-<div id="start-screen">
-  <div class="start-title">다리 건너기 퍼즐</div>
-  <div class="start-sub">섬과 섬을 잇는 모든 다리를 <strong>딱 한 번씩</strong>만 지나가 보세요.</div>
-  <button class="primary-btn" id="start-btn">게임 시작</button>
-</div>
-
-<!-- 게임 화면 -->
-<div id="game-container" style="display:none;">
-  <div id="overlay-wrapper">
-    <canvas id="canvas" width="600" height="400"></canvas>
-
-    <!-- 포기 오버레이 (스테이지 5 전용) -->
-    <div id="overlay">
-      <div class="overlay-box">
-        <h3>포기하시겠습니까?</h3>
-        <p>이 스테이지(5)는 수학적으로 한붓그리기가 불가능한 그래프입니다.</p>
-        <p>그래도 계속 도전할 수도 있고, 해설을 볼 수도 있어요.</p>
-        <div class="overlay-buttons">
-          <button id="giveup-cancel">계속 도전</button>
-          <button id="giveup-confirm">해설 보기</button>
-        </div>
+<div class="app">
+  <div class="topbar">
+    <div class="card title-card">
+      <div class="title-wrap">
+        <div class="stage-label" id="stageLabel">Stage 1</div>
+        <div class="goal" id="goalText">모든 선을 한 번씩 이어 그리기</div>
+        <div class="subtext" id="goalSub">점들을 클릭해서 선을 이어가세요.</div>
       </div>
+      <div class="logo">✏️</div>
     </div>
-
-    <!-- 해설 오버레이 -->
-    <div id="result-overlay">
-      <div class="overlay-box">
-        <h3>쾨니히스베르크의 다리</h3>
-      <p>이 그래프는 역사적으로 유명한 한붓그리기 문제입니다.</p>
-      <p>
-        각 땅(섬)을 점(정점), 다리를 선(간선)으로 생각하면,
-        홀수 차수 정점이 <strong>4개</strong>라서
-        한붓그리기가 <strong>수학적으로 불가능</strong>합니다.
-      </p>
-      <p>즉, 누구도 이 스테이지를 규칙대로 깰 수 없습니다 😊</p>
-      <div class="overlay-buttons">
-        <button id="result-close">처음 스테이지로</button>
-      </div>
-      </div>
+    <div class="card stats">
+      <div class="stat"><div class="k">경과 시간</div><div class="v" id="timeValue">00:00</div></div>
+      <div class="stat"><div class="k">이동 횟수</div><div class="v" id="moveValue">0</div></div>
+      <div class="stat"><div class="k">진행률</div><div class="v" id="progressValue">0%</div></div>
+    </div>
+    <div class="card actions">
+      <button class="btn ghost" id="resetBtn">리셋</button>
+      <button class="btn" id="undoBtn" disabled>한 단계 뒤로</button>
+      <button class="btn warn hidden" id="impossibleBtn">그리기 불가</button>
     </div>
   </div>
 
-  <div id="info"></div>
+  <div class="board-wrap">
+    <div class="card board-card">
+      <div class="board-area" id="boardArea">
+        <svg id="boardSvg" viewBox="0 0 1000 650" preserveAspectRatio="xMidYMid meet" aria-label="한붓그리기 퍼즐판"></svg>
+      </div>
+      <div class="hint-row">
+        <div class="hint-pill" id="hintText">아직 시작 전이에요. 아무 점이나 눌러 시작하세요.</div>
+        <div class="tiny">현재 점에서 갈 수 있는 점은 초록색으로 표시됩니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <div class="btn-group">
-    <button id="reset">현재 스테이지 리셋</button>
-    <button id="next" style="display:none;">다음 스테이지</button>
+<div class="screen" id="startScreen">
+  <div class="screen-card">
+    <h1>한붓그리기 퍼즐</h1>
+    <p>점들을 클릭해서 연결된 선을 한 번씩만 모두 지나가면 클리어입니다. 마지막 10단계는 특별 스테이지로, 직접 그리는 대신 <b>그리기 불가</b>를 판단하는 문제입니다.</p>
+    <div class="explain">
+      <div><span class="kbd">조작</span> 점 클릭 → 다음 점 클릭</div>
+      <div style="margin-top:6px"><span class="kbd">규칙</span> 이미 지난 선은 다시 지날 수 없습니다.</div>
+      <div style="margin-top:6px"><span class="kbd">목표</span> 1~9단계는 완주, 10단계는 불가능 판별</div>
+    </div>
+    <div class="screen-actions">
+      <button class="btn primary" id="startBtn">시작하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen hidden" id="clearScreen">
+  <div class="screen-card">
+    <h2 id="clearTitle">스테이지 클리어!</h2>
+    <p id="clearDesc">모든 선을 한 번씩 모두 지났어요.</p>
+    <div class="list">
+      <div class="summary-item"><div class="name">걸린 시간</div><div class="meta" id="clearTime">00:00</div></div>
+      <div class="summary-item"><div class="name">이동 횟수</div><div class="meta" id="clearMoves">0회</div></div>
+    </div>
+    <div class="screen-actions">
+      <button class="btn" id="clearRetryBtn">다시 하기</button>
+      <button class="btn primary" id="nextStageBtn">다음 스테이지</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen hidden" id="summaryScreen">
+  <div class="screen-card">
+    <h2>최종 클리어!</h2>
+    <p>모든 스테이지를 완료했습니다. 마지막 스테이지에서는 그릴 수 없는 이유까지 잘 찾아냈어요.</p>
+    <div class="list" id="summaryList"></div>
+    <div class="summary-item" style="margin-top:12px;background:#edf4ff">
+      <div class="name">총합</div>
+      <div class="meta" id="summaryTotalTime">00:00</div>
+      <div class="meta" id="summaryTotalMoves">0회</div>
+    </div>
+    <div class="screen-actions">
+      <button class="btn primary" id="restartAllBtn">처음부터 다시</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="impossibleModal">
+  <div class="modal-card">
+    <h3>왜 한붓그리기가 안 될까?</h3>
+    <p>이 스테이지는 모든 선을 한 번씩만 지나는 경로가 존재하지 않습니다. 홀수 차수 점이 4개이기 때문입니다. 한붓그리기가 가능하려면 홀수 차수 점은 0개 또는 2개여야 합니다.</p>
+    <div class="screen-actions">
+      <button class="btn primary" id="impossibleOkBtn">설명 확인</button>
+    </div>
   </div>
 </div>
 
 <script>
-/* ===========================
-   스테이지 데이터
-=========================== */
+(() => {
+  const svg = document.getElementById('boardSvg');
+  const stageLabel = document.getElementById('stageLabel');
+  const goalText = document.getElementById('goalText');
+  const goalSub = document.getElementById('goalSub');
+  const timeValue = document.getElementById('timeValue');
+  const moveValue = document.getElementById('moveValue');
+  const progressValue = document.getElementById('progressValue');
+  const hintText = document.getElementById('hintText');
+  const resetBtn = document.getElementById('resetBtn');
+  const undoBtn = document.getElementById('undoBtn');
+  const impossibleBtn = document.getElementById('impossibleBtn');
 
-const levels = [
-  {
-    id: 1,
-    title: "Stage 1 - 기본 연습",
-    description: "가장 단순한 구조입니다. 모든 다리를 한 번씩만 지나 보세요.",
-    nodes: [
-      { id: 0, x: 180, y: 120 },
-      { id: 1, x: 420, y: 120 },
-      { id: 2, x: 420, y: 280 },
-      { id: 3, x: 180, y: 280 }
-    ],
-    edges: [
-      { id:0,a:0,b:1 },
-      { id:1,a:1,b:2 },
-      { id:2,a:2,b:3 },
-      { id:3,a:3,b:0 },
-      { id:4,a:0,b:2 }
-    ],
-    startNode: 0
-  },
-  {
-    id: 2,
-    title: "Stage 2 - 별 모양 그래프",
-    description: "중앙 섬과 네 모서리 섬이 복잡하게 연결된 그래프입니다.",
-    nodes: [
-      { id:0,x:300,y:200 },
-      { id:1,x:140,y:120 },
-      { id:2,x:460,y:120 },
-      { id:3,x:460,y:280 },
-      { id:4,x:140,y:280 }
-    ],
-    edges: [
-      { id:0,a:0,b:1 },
-      { id:1,a:0,b:2 },
-      { id:2,a:0,b:3 },
-      { id:3,a:0,b:4 },
-      { id:4,a:1,b:2 },
-      { id:5,a:2,b:3 },
-      { id:6,a:3,b:4 }
-    ],
-    startNode: 2
-  },
-  {
-    id: 3,
-    title: "Stage 3 - 육각형 미로",
-    description: "육각형 모양으로 섬이 배치된 복잡한 그래프입니다.",
-    nodes: [
-      { id:0,x:300,y:80 },
-      { id:1,x:440,y:140 },
-      { id:2,x:440,y:260 },
-      { id:3,x:300,y:320 },
-      { id:4,x:160,y:260 },
-      { id:5,x:160,y:140 }
-    ],
-    edges: [
-      { id:0,a:0,b:1 },
-      { id:1,a:1,b:2 },
-      { id:2,a:2,b:3 },
-      { id:3,a:3,b:4 },
-      { id:4,a:4,b:5 },
-      { id:5,a:5,b:0 },
-      { id:6,a:0,b:3 },
-      { id:7,a:2,b:5 },
-      { id:8,a:0,b:2 }
-    ],
-    startNode: 3
-  },
-  {
-    id: 4,
-    title: "Stage 4 - 교차 다리",
-    description: "사각형 섬 사이에 교차 다리가 여러 개 있는 어려운 그래프입니다.",
-    nodes: [
-      { id:0,x:140,y:120 },
-      { id:1,x:460,y:120 },
-      { id:2,x:460,y:280 },
-      { id:3,x:140,y:280 }
-    ],
-    edges: [
-      { id:0,a:0,b:1 },
-      { id:1,a:1,b:2 },
-      { id:2,a:2,b:3 },
-      { id:3,a:3,b:0 },
-      { id:4,a:0,b:2 },
-      { id:5,a:0,b:2 },
-      { id:6,a:1,b:3 },
-      { id:7,a:1,b:3 },
-      { id:8,a:0,b:1 }
-    ],
-    startNode: 0
-  },
-  {
-    id: 5,
-    title: "Stage 5 - 쾨니히스베르크의 다리",
-    description: "네 점 A,B,C,D로 표현한 쾨니히스베르크의 다리 그래프입니다.",
-    nodes: [
-      // C 위, A 가운데, B 아래 (왼쪽), D 오른쪽
-      { id:0,x:160,y:80  }, // C
-      { id:1,x:160,y:200 }, // A
-      { id:2,x:160,y:320 }, // B
-      { id:3,x:450,y:200 }  // D
-    ],
-    edges: [
-      // A-C 두 개
-      { id:0,a:0,b:1 },
-      { id:1,a:0,b:1 },
-      // A-B 두 개
-      { id:2,a:1,b:2 },
-      { id:3,a:1,b:2 },
-      // A-D, C-D, B-D
-      { id:4,a:1,b:3 },
-      { id:5,a:0,b:3 },
-      { id:6,a:2,b:3 }
-    ],
-    startNode: 1   // A에서 시작
+  const startScreen = document.getElementById('startScreen');
+  const clearScreen = document.getElementById('clearScreen');
+  const summaryScreen = document.getElementById('summaryScreen');
+  const impossibleModal = document.getElementById('impossibleModal');
+
+  const startBtn = document.getElementById('startBtn');
+  const clearRetryBtn = document.getElementById('clearRetryBtn');
+  const nextStageBtn = document.getElementById('nextStageBtn');
+  const restartAllBtn = document.getElementById('restartAllBtn');
+  const impossibleOkBtn = document.getElementById('impossibleOkBtn');
+
+  const clearTitle = document.getElementById('clearTitle');
+  const clearDesc = document.getElementById('clearDesc');
+  const clearTime = document.getElementById('clearTime');
+  const clearMoves = document.getElementById('clearMoves');
+  const summaryList = document.getElementById('summaryList');
+  const summaryTotalTime = document.getElementById('summaryTotalTime');
+  const summaryTotalMoves = document.getElementById('summaryTotalMoves');
+
+  const stages = [
+    {
+      id: 1,
+      name: '직선 기초',
+      goal: '모든 선을 한 번씩 이어 그리기',
+      subtitle: '아무 점이나 눌러 시작할 수 있어요.',
+      nodes: {A:[20,50], B:[50,50], C:[80,50]},
+      edges: [['A','B'], ['B','C']]
+    },
+    {
+      id: 2,
+      name: '삼각형과 꼬리',
+      goal: '삼각형을 지나 꼬리까지 이어 보세요',
+      subtitle: '어떤 선을 먼저 지날지 순서를 생각해 보세요.',
+      nodes: {A:[30,65], B:[50,35], C:[70,65], D:[85,65]},
+      edges: [['A','B'], ['B','C'], ['C','A'], ['C','D']]
+    },
+    {
+      id: 3,
+      name: '사각형과 대각선',
+      goal: '겉모양에 속지 말고 대각선도 활용하세요',
+      subtitle: '중간에 막히지 않게 경로를 선택해 보세요.',
+      nodes: {A:[25,30], B:[75,30], C:[75,70], D:[25,70]},
+      edges: [['A','B'], ['B','C'], ['C','D'], ['D','A'], ['A','C']]
+    },
+    {
+      id: 4,
+      name: '집 모양',
+      goal: '집 모양을 한 번에 이어 보세요',
+      subtitle: '지붕을 언제 지나갈지 생각해 보세요.',
+      nodes: {A:[30,72], B:[70,72], C:[70,42], D:[30,42], E:[50,18]},
+      edges: [['A','B'], ['B','C'], ['C','D'], ['D','A'], ['D','E'], ['E','C']]
+    },
+    {
+      id: 5,
+      name: '모래시계형',
+      goal: '중앙 점을 잘 활용해야 해요',
+      subtitle: '중앙 분기점을 너무 빨리 소모하지 마세요.',
+      nodes: {A:[25,25], B:[75,25], C:[25,75], D:[75,75], E:[50,50]},
+      edges: [['A','E'], ['B','E'], ['C','E'], ['D','E'], ['A','B'], ['C','D']]
+    },
+    {
+      id: 6,
+      name: '격자 간소형',
+      goal: '교차되는 길을 끝까지 잘 이어 보세요',
+      subtitle: '가운데 점 근처의 순서가 중요해요.',
+      nodes: {A:[25,28], B:[50,28], C:[75,28], D:[25,72], E:[50,72], F:[75,72]},
+      edges: [['A','B'], ['B','C'], ['D','E'], ['E','F'], ['A','D'], ['B','E'], ['C','F'], ['B','D'], ['C','E']]
+    },
+    {
+      id: 7,
+      name: '분기 많은 별형',
+      goal: '분기점을 잘 정리하며 내려가 보세요',
+      subtitle: '위, 중간, 아래를 어떤 순서로 지날지 고민해 보세요.',
+      nodes: {A:[50,15], B:[25,35], C:[75,35], D:[35,60], E:[65,60], F:[50,85]},
+      edges: [['A','B'], ['A','C'], ['B','D'], ['C','E'], ['D','F'], ['E','F'], ['B','C'], ['D','E'], ['B','E']]
+    },
+    {
+      id: 8,
+      name: '이중 사각형',
+      goal: '안쪽과 바깥쪽을 모두 지나야 해요',
+      subtitle: '예쁜 모양이지만 순서를 잘못 잡으면 막혀요.',
+      nodes: {A:[25,25], B:[75,25], C:[75,75], D:[25,75], E:[40,40], F:[60,40], G:[60,60], H:[40,60]},
+      edges: [['A','B'], ['B','C'], ['C','D'], ['D','A'], ['E','F'], ['F','G'], ['G','H'], ['H','E'], ['A','E'], ['C','G'], ['E','G']]
+    },
+    {
+      id: 9,
+      name: '복합 네트워크',
+      goal: '마지막 일반 스테이지입니다',
+      subtitle: '중앙 허브를 언제 지날지가 핵심이에요.',
+      nodes: {A:[15,50], B:[35,25], C:[35,75], D:[55,15], E:[50,50], F:[58,85], G:[80,30], H:[80,70]},
+      edges: [['A','B'], ['A','C'], ['B','D'], ['B','E'], ['C','E'], ['C','F'], ['D','G'], ['E','G'], ['E','H'], ['F','H'], ['D','E'], ['E','F'], ['G','H'], ['B','C'], ['D','F',22]]
+    },
+    {
+      id: 10,
+      name: '쾨니히스베르크의 다리',
+      goal: '이 스테이지는 정말 그릴 수 있을까요?',
+      subtitle: '그릴 수 없다고 판단되면 버튼을 눌러 보세요.',
+      impossible: true,
+      nodes: {A:[12,50], B:[47,26], C:[47,74], D:[88,50]},
+      edges: [
+        ['A','B',-34], ['A','B',34],
+        ['A','C',-34],
+        ['A','D',-54], ['A','D',54],
+        ['B','C',22],
+        ['C','D',34]
+      ]
+    }
+  ];
+
+  const state = {
+    stageIndex: 0,
+    usedEdgeIds: new Set(),
+    currentNode: null,
+    moves: 0,
+    startedAt: 0,
+    elapsed: 0,
+    timer: null,
+    history: [],
+    locked: false,
+    summary: []
+  };
+
+  const ns = 'http://www.w3.org/2000/svg';
+  let edgeEls = [];
+  let nodeEls = {};
+  let travelDot = null;
+
+  function buildStageData(stage){
+    return stage.edges.map((edge, idx) => {
+      const [a,b,curve=0] = edge;
+      return { id:`e${idx}`, a, b, curve };
+    });
   }
-];
 
-/* ===========================
-   전역 상태
-=========================== */
+  function resetStateForStage(keepSummary=true){
+    state.usedEdgeIds = new Set();
+    state.currentNode = null;
+    state.moves = 0;
+    state.elapsed = 0;
+    state.history = [];
+    state.locked = false;
+    if (!keepSummary) state.summary = [];
+    stopTimer();
+    startTimer();
+    updateHud();
+  }
 
-const startScreen = document.getElementById("start-screen");
-const startBtn    = document.getElementById("start-btn");
-const gameContainer = document.getElementById("game-container");
+  function startTimer(){
+    state.startedAt = Date.now();
+    state.timer = setInterval(() => {
+      state.elapsed = Math.floor((Date.now() - state.startedAt)/1000);
+      timeValue.textContent = fmtTime(state.elapsed);
+    }, 250);
+  }
 
-const canvas = document.getElementById("canvas");
-const ctx    = canvas.getContext("2d");
+  function stopTimer(){
+    clearInterval(state.timer);
+    state.timer = null;
+  }
 
-const infoDiv  = document.getElementById("info");
-const resetBtn = document.getElementById("reset");
-const nextBtn  = document.getElementById("next");
+  function fmtTime(sec){
+    const m = String(Math.floor(sec/60)).padStart(2,'0');
+    const s = String(sec%60).padStart(2,'0');
+    return `${m}:${s}`;
+  }
 
-const overlay       = document.getElementById("overlay");
-const giveupCancel  = document.getElementById("giveup-cancel");
-const giveupConfirm = document.getElementById("giveup-confirm");
+  function currentStage(){ return stages[state.stageIndex]; }
 
-const resultOverlay = document.getElementById("result-overlay");
-const resultClose   = document.getElementById("result-close");
+  function renderStage(){
+    const stage = currentStage();
+    svg.innerHTML = '';
+    edgeEls = [];
+    nodeEls = {};
+    travelDot = document.createElementNS(ns,'circle');
+    travelDot.setAttribute('class','travel-dot hidden');
+    travelDot.setAttribute('r', '10');
 
-let currentLevelIndex = 0;
-let usedEdges = {};
-let currentNodeId = 0;
-let levelCleared = false;
-let resetCount = 0;
-let cheatArmed = false;
+    const defs = document.createElementNS(ns, 'defs');
+    const bg = document.createElementNS(ns, 'linearGradient');
+    bg.setAttribute('id','riverGrad');
+    bg.innerHTML = '<stop offset="0%" stop-color="#5fa4ff" stop-opacity="0.10"/><stop offset="100%" stop-color="#8ac8ff" stop-opacity="0.08"/>';
+    defs.appendChild(bg);
+    svg.appendChild(defs);
 
-/* ===========================
-   평행 다리 offset 계산
-   (겹쳐 보이는 문제 해결)
-=========================== */
+    if (stage.impossible) drawImpossibleBackdrop(stage);
 
-function prepareParallelOffsets(level) {
-  const groups = {};
-  level.edges.forEach(e => {
-    const key = e.a < e.b ? `${e.a}-${e.b}` : `${e.b}-${e.a}`;
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(e);
-  });
+    const stageEdges = buildStageData(stage);
+    stageEdges.forEach((edge) => {
+      const path = document.createElementNS(ns,'path');
+      path.setAttribute('class','edge');
+      path.dataset.id = edge.id;
+      path.setAttribute('d', edgePath(stage.nodes[edge.a], stage.nodes[edge.b], edge.curve));
+      svg.appendChild(path);
+      edgeEls.push({ ...edge, el: path });
+    });
 
-  Object.values(groups).forEach(arr => {
-    const n = arr.length;
-    if (n === 1) {
-      arr[0].offsetIndex = 0;
+    Object.entries(stage.nodes).forEach(([id,[x,y]]) => {
+      const g = document.createElementNS(ns,'g');
+      g.setAttribute('class','node');
+      g.dataset.id = id;
+      g.setAttribute('transform',`translate(${px(x)},${py(y)})`);
+
+      const ring = document.createElementNS(ns,'circle');
+      ring.setAttribute('class','ring');
+      ring.setAttribute('r','25');
+      const circle = document.createElementNS(ns,'circle');
+      circle.setAttribute('class','main');
+      circle.setAttribute('r','18');
+      const text = document.createElementNS(ns,'text');
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('dominant-baseline','central');
+      text.textContent = id;
+      g.append(ring,circle,text);
+      g.addEventListener('click',()=>handleNodeClick(id));
+      svg.appendChild(g);
+      nodeEls[id] = g;
+    });
+
+    svg.appendChild(travelDot);
+    stageLabel.textContent = `Stage ${stage.id} · ${stage.name}`;
+    goalText.textContent = stage.goal;
+    goalSub.textContent = stage.subtitle;
+    impossibleBtn.classList.toggle('hidden', !stage.impossible);
+    updateHud();
+    updateHighlights();
+  }
+
+  function drawImpossibleBackdrop(stage){
+    const river = document.createElementNS(ns,'path');
+    river.setAttribute('d','M310,0 C235,78 218,165 250,245 C274,304 338,332 388,325 C338,359 274,389 250,448 C217,529 233,574 310,650 L690,650 C768,574 784,529 750,448 C726,389 662,359 612,325 C662,332 726,304 750,245 C782,165 765,78 690,0 Z');
+    river.setAttribute('fill','url(#riverGrad)');
+    river.setAttribute('opacity','0.9');
+    svg.appendChild(river);
+
+    const shoreHighlights = [
+      'M280,35 C250,92 252,158 286,218',
+      'M720,35 C750,92 748,158 714,218',
+      'M282,612 C252,560 252,495 287,435',
+      'M718,612 C748,560 748,495 713,435'
+    ];
+    shoreHighlights.forEach(d => {
+      const s = document.createElementNS(ns,'path');
+      s.setAttribute('d', d);
+      s.setAttribute('fill','none');
+      s.setAttribute('stroke','rgba(255,255,255,0.32)');
+      s.setAttribute('stroke-width','10');
+      s.setAttribute('stroke-linecap','round');
+      svg.appendChild(s);
+    });
+
+    const lands = [
+      'M40,228 C64,192 120,178 186,182 C246,186 286,212 297,252 C309,295 300,350 272,390 C242,432 184,454 116,447 C63,441 30,405 21,360 C11,312 16,264 40,228 Z',
+      'M350,144 C386,120 445,114 491,130 C533,145 556,180 552,223 C547,269 518,295 470,302 C420,309 368,297 342,261 C317,227 320,174 350,144 Z',
+      'M348,348 C381,322 438,313 490,326 C533,338 558,373 554,420 C550,470 520,504 469,510 C418,516 366,503 339,464 C315,429 317,375 348,348 Z',
+      'M716,203 C755,176 823,176 875,198 C929,221 958,263 961,316 C964,368 942,415 896,439 C848,464 779,470 734,445 C694,423 671,381 670,332 C668,277 680,228 716,203 Z'
+    ];
+    lands.forEach((d, idx) => {
+      const land = document.createElementNS(ns,'path');
+      land.setAttribute('d', d);
+      land.setAttribute('fill', idx === 3 ? '#efe0bb' : '#f3e7c7');
+      land.setAttribute('stroke', '#dbc99e');
+      land.setAttribute('stroke-width', '4');
+      land.setAttribute('opacity', '0.9');
+      svg.appendChild(land);
+    });
+  }
+
+  function edgePath([x1,y1],[x2,y2],curve=0){
+    const X1=px(x1), Y1=py(y1), X2=px(x2), Y2=py(y2);
+    if (!curve) return `M ${X1} ${Y1} L ${X2} ${Y2}`;
+    const mx = (X1+X2)/2, my = (Y1+Y2)/2;
+    const dx = X2-X1, dy = Y2-Y1;
+    const len = Math.hypot(dx,dy) || 1;
+    const nx = -dy/len, ny = dx/len;
+    const cx = mx + nx*curve;
+    const cy = my + ny*curve;
+    return `M ${X1} ${Y1} Q ${cx} ${cy} ${X2} ${Y2}`;
+  }
+
+  function px(x){ return x * 10; }
+  function py(y){ return y * 6.5; }
+
+  function updateHud(){
+    moveValue.textContent = state.moves;
+    timeValue.textContent = fmtTime(state.elapsed);
+    const pct = Math.round((state.usedEdgeIds.size / currentStage().edges.length) * 100);
+    progressValue.textContent = `${pct}%`;
+    undoBtn.disabled = state.history.length === 0 || state.locked;
+    if (!state.currentNode) {
+      hintText.textContent = '아직 시작 전이에요. 아무 점이나 눌러 시작하세요.';
+    }
+  }
+
+  function getUsableEdgesFrom(nodeId){
+    return edgeEls.filter(e => !state.usedEdgeIds.has(e.id) && (e.a === nodeId || e.b === nodeId));
+  }
+
+  function neighborVia(edge,nodeId){ return edge.a === nodeId ? edge.b : edge.a; }
+
+  function updateHighlights(){
+    const validNeighbors = new Set();
+    edgeEls.forEach(edge => {
+      edge.el.classList.remove('used','valid','dim');
+      if (state.usedEdgeIds.has(edge.id)) {
+        edge.el.classList.add('used');
+      }
+    });
+
+    Object.values(nodeEls).forEach(el => el.setAttribute('class','node'));
+
+    if (state.currentNode) {
+      nodeEls[state.currentNode]?.classList.add('current');
+      const usable = getUsableEdgesFrom(state.currentNode);
+      usable.forEach(edge => {
+        edge.el.classList.add('valid');
+        const n = neighborVia(edge, state.currentNode);
+        validNeighbors.add(n);
+      });
+      Object.keys(nodeEls).forEach(id => {
+        if (id !== state.currentNode && validNeighbors.has(id)) nodeEls[id].classList.add('valid');
+      });
+      hintText.textContent = usable.length
+        ? `현재 점 ${state.currentNode}에서 이어 갈 수 있는 점을 눌러 보세요.`
+        : '더 이상 갈 수 있는 길이 없어요. 리셋하거나 뒤로 돌아가 보세요.';
+
+      edgeEls.forEach(edge => {
+        if (!state.usedEdgeIds.has(edge.id) && !(edge.a === state.currentNode || edge.b === state.currentNode)) {
+          edge.el.classList.add('dim');
+        }
+      });
     } else {
-      // -k ... 0 ... +k 형태로 분배
-      for (let i = 0; i < n; i++) {
-        arr[i].offsetIndex = i - (n - 1) / 2;
+      hintText.textContent = '시작할 점 하나를 눌러 경로를 시작하세요.';
+    }
+  }
+
+  function flashInvalid(nodeId){
+    const el = nodeEls[nodeId];
+    if (!el) return;
+    el.classList.add('invalid');
+    setTimeout(() => el.classList.remove('invalid'), 320);
+  }
+
+  async function handleNodeClick(nodeId){
+    if (state.locked || clearScreenVisible() || summaryVisible() || modalVisible()) return;
+    if (!state.currentNode) {
+      state.currentNode = nodeId;
+      updateHighlights();
+      return;
+    }
+    if (nodeId === state.currentNode) return;
+
+    const edge = getUsableEdgesFrom(state.currentNode).find(e => neighborVia(e, state.currentNode) === nodeId);
+    if (!edge) {
+      flashInvalid(nodeId);
+      hintText.textContent = '그 점으로는 바로 이어질 수 없어요.';
+      return;
+    }
+
+    state.locked = true;
+    const from = state.currentNode;
+    state.history.push({ edgeId: edge.id, from, to: nodeId });
+    await animateTraversal(edge, from, nodeId);
+    state.usedEdgeIds.add(edge.id);
+    state.currentNode = nodeId;
+    state.moves += 1;
+    state.locked = false;
+    updateHud();
+    updateHighlights();
+
+    if (state.usedEdgeIds.size === currentStage().edges.length) {
+      completeStage(false);
+    }
+  }
+
+  function animateTraversal(edge, from, to){
+    const path = edge.el;
+    const total = path.getTotalLength();
+    const fromAtStart = edge.a === from;
+    const duration = Math.max(320, Math.min(780, total * 0.7));
+    travelDot.classList.remove('hidden');
+    const start = performance.now();
+    return new Promise(resolve => {
+      const frame = now => {
+        let t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const p = path.getPointAtLength(fromAtStart ? total * eased : total * (1 - eased));
+        travelDot.setAttribute('cx', p.x);
+        travelDot.setAttribute('cy', p.y);
+        if (t < 1) requestAnimationFrame(frame);
+        else {
+          travelDot.classList.add('hidden');
+          resolve();
+        }
+      };
+      requestAnimationFrame(frame);
+    });
+  }
+
+  function recordStageResult(extra={}){
+    const idx = state.stageIndex;
+    state.summary[idx] = {
+      id: currentStage().id,
+      name: currentStage().name,
+      time: state.elapsed,
+      moves: state.moves,
+      impossibleSolved: !!extra.impossibleSolved
+    };
+  }
+
+  function completeStage(fromImpossibleButton){
+    stopTimer();
+    recordStageResult({ impossibleSolved: fromImpossibleButton });
+    clearTitle.textContent = currentStage().id === 10 ? '특수 스테이지 완료!' : `Stage ${currentStage().id} 클리어!`;
+    clearDesc.textContent = fromImpossibleButton
+      ? '이 스테이지는 한붓그리기가 불가능하다는 점을 정확히 찾아냈어요.'
+      : '모든 선을 한 번씩 모두 지나갔어요.';
+    clearTime.textContent = fmtTime(state.elapsed);
+    clearMoves.textContent = `${state.moves}회`;
+    nextStageBtn.textContent = state.stageIndex === stages.length - 1 ? '최종 결과 보기' : '다음 스테이지';
+    clearScreen.classList.remove('hidden');
+  }
+
+  function buildSummary(){
+    summaryList.innerHTML = '';
+    let totalTime = 0, totalMoves = 0;
+    state.summary.forEach(item => {
+      if (!item) return;
+      totalTime += item.time;
+      totalMoves += item.moves;
+      const row = document.createElement('div');
+      row.className = 'summary-item';
+      row.innerHTML = `
+        <div class="name">Stage ${item.id} · ${item.name}</div>
+        <div class="meta">시간 ${fmtTime(item.time)}</div>
+        <div class="meta">이동 ${item.moves}회</div>
+      `;
+      summaryList.appendChild(row);
+    });
+    summaryTotalTime.textContent = `시간 ${fmtTime(totalTime)}`;
+    summaryTotalMoves.textContent = `이동 ${totalMoves}회`;
+  }
+
+  function loadStage(index, keepSummary=true){
+    demoRunId += 1;
+    state.stageIndex = index;
+    clearScreen.classList.add('hidden');
+    summaryScreen.classList.add('hidden');
+    impossibleModal.classList.add('hidden');
+    state.locked = false;
+    resetStateForStage(keepSummary);
+    renderStage();
+  }
+
+  function clearScreenVisible(){ return !clearScreen.classList.contains('hidden'); }
+  function summaryVisible(){ return !summaryScreen.classList.contains('hidden'); }
+  function modalVisible(){ return !impossibleModal.classList.contains('hidden'); }
+
+
+  function isAtResetState(){
+    return !state.currentNode && state.usedEdgeIds.size === 0 && state.history.length === 0 && state.moves === 0;
+  }
+
+  function computeEulerTrail(stage){
+    if (stage.impossible) return null;
+
+    const stageEdges = buildStageData(stage);
+    const nodeIds = Object.keys(stage.nodes);
+    const adj = new Map();
+    const degree = new Map();
+
+    nodeIds.forEach(id => {
+      adj.set(id, []);
+      degree.set(id, 0);
+    });
+
+    stageEdges.forEach(edge => {
+      adj.get(edge.a).push({ edgeId: edge.id, next: edge.b });
+      adj.get(edge.b).push({ edgeId: edge.id, next: edge.a });
+      degree.set(edge.a, degree.get(edge.a) + 1);
+      degree.set(edge.b, degree.get(edge.b) + 1);
+    });
+
+    const odd = [...degree.entries()].filter(([,d]) => d % 2 === 1).map(([id]) => id);
+    const start = odd[0] || nodeIds.find(id => degree.get(id) > 0) || nodeIds[0];
+    if (!start) return [];
+
+    const used = new Set();
+    const stack = [start];
+    const trail = [];
+
+    while (stack.length) {
+      const node = stack[stack.length - 1];
+      const nextEdge = (adj.get(node) || []).find(item => !used.has(item.edgeId));
+      if (nextEdge) {
+        used.add(nextEdge.edgeId);
+        stack.push(nextEdge.next);
+      } else {
+        trail.push(stack.pop());
       }
     }
-  });
-}
 
-/* ===========================
-   유틸 / 초기화
-=========================== */
-
-function getLevel() {
-  return levels[currentLevelIndex];
-}
-
-function initLevel(i) {
-  currentLevelIndex = i;
-  const level = getLevel();
-
-  usedEdges = {};
-  level.edges.forEach(e => usedEdges[e.id] = false);
-
-  currentNodeId = level.startNode;
-  levelCleared  = false;
-  resetCount    = 0;
-
-  prepareParallelOffsets(level);   // ★ 평행 다리 곡률 설정
-
-  draw();
-  updateInfo();
-  nextBtn.style.display = "none";
-}
-
-/* ===========================
-   강 그리기
-=========================== */
-
-function drawRiver(level) {
-  ctx.save();
-  ctx.fillStyle = "#dbeafe"; // 연한 파랑
-
-  if (level.id === 5) {
-    // 위쪽 강
-    ctx.beginPath();
-    ctx.moveTo(40, 100);
-    ctx.quadraticCurveTo(300, 60, 560, 100);
-    ctx.lineTo(560, 140);
-    ctx.quadraticCurveTo(300, 110, 40, 140);
-    ctx.closePath();
-    ctx.fill();
-
-    // 아래쪽 강
-    ctx.beginPath();
-    ctx.moveTo(40, 220);
-    ctx.quadraticCurveTo(300, 180, 560, 220);
-    ctx.lineTo(560, 260);
-    ctx.quadraticCurveTo(300, 230, 40, 260);
-    ctx.closePath();
-    ctx.fill();
-  } else {
-    ctx.beginPath();
-    ctx.moveTo(80, 140);
-    ctx.quadraticCurveTo(300, 110, 520, 140);
-    ctx.lineTo(520, 260);
-    ctx.quadraticCurveTo(300, 290, 80, 260);
-    ctx.closePath();
-    ctx.fill();
+    trail.reverse();
+    return trail;
   }
 
-  ctx.restore();
-}
+  async function runAdminDemo(){
+    if (state.locked || clearScreenVisible() || summaryVisible() || modalVisible()) return;
+    if (!isAtResetState()) return;
 
-/* ===========================
-   곡선 다리
-=========================== */
+    const runId = ++demoRunId;
+    state.locked = true;
 
-function drawCurve(A, B, offset) {
-  const x1 = A.x, y1 = A.y;
-  const x2 = B.x, y2 = B.y;
+    try {
+      if (currentStage().impossible) {
+        impossibleBtn.classList.add('pulse');
+        hintText.textContent = '이 스테이지는 자동 시연 대신 불가능 판정을 보여줘요.';
+        await new Promise(r => setTimeout(r, 550));
+        if (runId !== demoRunId) return;
+        impossibleBtn.classList.remove('pulse');
+        stopTimer();
+        impossibleModal.classList.remove('hidden');
+        return;
+      }
 
-  const mx = (x1 + x2) / 2;
-  const my = (y1 + y2) / 2;
+      const path = computeEulerTrail(currentStage());
+      if (!path || path.length < 2) {
+        return;
+      }
 
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.sqrt(dx*dx + dy*dy) || 1;
-  const nx = -dy / len;
-  const ny =  dx / len;
+      state.currentNode = path[0];
+      updateHighlights();
+      await new Promise(r => setTimeout(r, 260));
+      if (runId !== demoRunId) return;
 
-  const curve = 18 * (offset || 0);  // offsetIndex에 따라 위/아래로 휨
+      for (let i = 1; i < path.length; i++) {
+        const from = state.currentNode;
+        const to = path[i];
+        const edge = getUsableEdgesFrom(from).find(e => neighborVia(e, from) === to);
+        if (!edge) break;
+        state.history.push({ edgeId: edge.id, from, to });
+        await animateTraversal(edge, from, to);
+        if (runId !== demoRunId) return;
+        state.usedEdgeIds.add(edge.id);
+        state.currentNode = to;
+        state.moves += 1;
+        updateHud();
+        updateHighlights();
+        await new Promise(r => setTimeout(r, 120));
+        if (runId !== demoRunId) return;
+      }
 
-  const cx = mx + nx * curve;
-  const cy = my + ny * curve;
-
-  ctx.quadraticCurveTo(cx, cy, x2, y2);
-}
-
-/* ===========================
-   그리기
-=========================== */
-
-function draw() {
-  const level = getLevel();
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  drawRiver(level);
-
-  // 다리
-  level.edges.forEach(e => {
-    const A = level.nodes.find(n => n.id === e.a);
-    const B = level.nodes.find(n => n.id === e.b);
-
-    ctx.beginPath();
-    ctx.moveTo(A.x, A.y);
-
-    const used = usedEdges[e.id];
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = used ? "#bdbdbd" : "#1565c0";
-
-    drawCurve(A, B, e.offsetIndex);
-    ctx.stroke();
-  });
-
-  // 섬
-  level.nodes.forEach(n => {
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, 18, 0, Math.PI * 2);
-    ctx.fillStyle = (n.id === currentNodeId) ? "#ffeb3b" : "#ffffff";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#424242";
-    ctx.stroke();
-
-    ctx.fillStyle = "#000000";
-    ctx.font = "14px Pretendard";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(n.id, n.x, n.y);
-  });
-}
-
-/* ===========================
-   정보 업데이트
-=========================== */
-
-function updateInfo(message = "") {
-  const level = getLevel();
-  const total = level.edges.length;
-  const used = Object.values(usedEdges).filter(v => v).length;
-
-  let html = `
-    <div><strong>${level.title}</strong></div>
-    <div style="margin-top:4px;">${level.description}</div>
-    <div style="margin-top:6px;">사용한 다리: ${used} / ${total}</div>
-    <div>현재 위치한 섬 ID: ${currentNodeId}</div>
-    <div style="margin-top:6px; font-size:13px; color:#555;">
-      규칙: 모든 다리를 <strong>딱 한 번씩만</strong> 지나면 클리어입니다. 출발지로 돌아올 필요는 없습니다.
-    </div>
-  `;
-
-  if (levelCleared && level.id <= 4) {
-    html += `<div style="margin-top:6px; color:#2e7d32;"><strong>✔ 클리어! '다음 스테이지' 버튼이 활성화되었습니다.</strong></div>`;
-  }
-
-  if (message) {
-    html += `<div style="margin-top:6px; color:#d32f2f;"><strong>${message}</strong></div>`;
-  }
-
-  infoDiv.innerHTML = html;
-}
-
-/* ===========================
-   승리 체크
-=========================== */
-
-function checkWin() {
-  const level = getLevel();
-  const total = level.edges.length;
-  const used = Object.values(usedEdges).filter(v => v).length;
-
-  if (used === total) {
-    levelCleared = true;
-    updateInfo("축하합니다! 모든 다리를 한 번씩만 지나갔습니다! ✅");
-    if (level.id <= 4) {
-      nextBtn.style.display = "inline-block";
+      if (runId !== demoRunId) return;
+      if (state.usedEdgeIds.size === currentStage().edges.length) {
+        completeStage(false);
+      }
+    } catch (err) {
+      console.error('Admin demo failed:', err);
+    } finally {
+      if (runId === demoRunId && !modalVisible() && !clearScreenVisible()) {
+        state.locked = false;
+        updateHud();
+        updateHighlights();
+      }
     }
-    return true;
-  }
-  return false;
-}
-
-/* ===========================
-   캔버스 클릭
-=========================== */
-
-canvas.addEventListener("click", (event) => {
-  const level = getLevel();
-  const rect = canvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-
-  const clickedNode = level.nodes.find(n => Math.hypot(n.x - x, n.y - y) <= 20);
-  if (!clickedNode) return;
-
-  if (clickedNode.id === currentNodeId) {
-    updateInfo("이미 그 섬에 서 있습니다. 다른 섬을 눌러 보세요.");
-    return;
   }
 
-  const candidateEdges = level.edges.filter(e => {
-    const connected =
-      (e.a === currentNodeId && e.b === clickedNode.id) ||
-      (e.b === currentNodeId && e.a === clickedNode.id);
-    return connected && !usedEdges[e.id];
+  resetBtn.addEventListener('click', () => loadStage(state.stageIndex));
+
+  undoBtn.addEventListener('click', () => {
+    if (state.locked || !state.history.length) return;
+    const last = state.history.pop();
+    state.usedEdgeIds.delete(last.edgeId);
+    state.currentNode = last.from;
+    state.moves = Math.max(0, state.moves - 1);
+    updateHud();
+    updateHighlights();
   });
 
-  if (candidateEdges.length === 0) {
-    updateInfo("이 두 섬 사이에 더 이상 사용할 수 있는 다리가 없습니다.");
-    return;
+  impossibleBtn.addEventListener('click', () => {
+    if (!currentStage().impossible) return;
+    state.locked = false;
+    stopTimer();
+    impossibleModal.classList.remove('hidden');
+  });
+
+  impossibleOkBtn.addEventListener('click', () => {
+    impossibleModal.classList.add('hidden');
+    state.locked = false;
+    completeStage(true);
+  });
+
+  startBtn.addEventListener('click', () => {
+    startScreen.classList.add('hidden');
+    loadStage(0, false);
+  });
+
+
+  let adminHeld = false;
+  let demoRunId = 0;
+
+  function isAdminModifierEvent(e){
+    return e.code === 'Backquote' || e.code === 'IntlBackslash' || e.key === '`' || e.key === '\\' || e.key === '₩' || e.key === '￦';
   }
 
-  const edgeToUse = candidateEdges[0];
-  usedEdges[edgeToUse.id] = true;
-  currentNodeId = clickedNode.id;
-
-  draw();
-  if (!checkWin()) {
-    updateInfo();
-  }
-});
-
-/* ===========================
-   치트 (` + Enter / ← / →)
-=========================== */
-
-function animateClear() {
-  const level = getLevel();
-  let i = 0;
-
-  function step() {
-    if (i >= level.edges.length) {
-      checkWin();
+  document.addEventListener('keydown', (e) => {
+    if (isAdminModifierEvent(e)) {
+      adminHeld = true;
       return;
     }
-    usedEdges[level.edges[i].id] = true;
-    draw();
-    i++;
-    setTimeout(step, 130);
-  }
-  step();
-}
+    if (!adminHeld || state.locked || modalVisible()) return;
 
-document.addEventListener("keydown", (e) => {
-  if (gameContainer.style.display === "none") return;
-
-  if (e.key === "`") {
-    cheatArmed = true;
-    return;
-  }
-  if (!cheatArmed) return;
-
-  if (e.key === "Enter") {
-    animateClear();
-  } else if (e.key === "ArrowLeft") {
-    initLevel((currentLevelIndex - 1 + levels.length) % levels.length);
-  } else if (e.key === "ArrowRight") {
-    initLevel((currentLevelIndex + 1) % levels.length);
-  }
-
-  cheatArmed = false;
-});
-
-/* ===========================
-   리셋
-=========================== */
-
-resetBtn.addEventListener("click", () => {
-  const level = getLevel();
-
-  if (level.id === 5) {
-    resetCount++;
-    if (resetCount >= 5) {
-      overlay.style.display = "flex";
+    if (e.code === 'ArrowLeft') {
+      e.preventDefault();
+      clearScreen.classList.add('hidden');
+      summaryScreen.classList.add('hidden');
+      impossibleModal.classList.add('hidden');
+      loadStage(Math.max(0, state.stageIndex - 1));
       return;
     }
-  }
 
-  initLevel(currentLevelIndex);
-});
+    if (e.code === 'ArrowRight') {
+      e.preventDefault();
+      clearScreen.classList.add('hidden');
+      summaryScreen.classList.add('hidden');
+      impossibleModal.classList.add('hidden');
+      loadStage(Math.min(stages.length - 1, state.stageIndex + 1));
+      return;
+    }
 
-/* ===========================
-   다음 스테이지 (조건 단순화)
-=========================== */
+    if (e.code === 'Enter') {
+      e.preventDefault();
+      if (clearScreenVisible() || summaryVisible()) return;
+      runAdminDemo();
+    }
+  });
 
-nextBtn.addEventListener("click", () => {
-  if (currentLevelIndex < levels.length - 1) {
-    initLevel(currentLevelIndex + 1);
-  }
-});
+  document.addEventListener('keyup', (e) => {
+    if (isAdminModifierEvent(e)) adminHeld = false;
+  });
 
-/* ===========================
-   오버레이
-=========================== */
+  window.addEventListener('blur', () => {
+    adminHeld = false;
+  });
 
-giveupCancel.addEventListener("click", () => {
-  overlay.style.display = "none";
-});
+  clearRetryBtn.addEventListener('click', () => {
+    loadStage(state.stageIndex);
+  });
 
-giveupConfirm.addEventListener("click", () => {
-  overlay.style.display = "none";
-  resultOverlay.style.display = "flex";
-});
+  nextStageBtn.addEventListener('click', () => {
+    clearScreen.classList.add('hidden');
+    if (state.stageIndex < stages.length - 1) {
+      loadStage(state.stageIndex + 1);
+    } else {
+      buildSummary();
+      summaryScreen.classList.remove('hidden');
+    }
+  });
 
-resultClose.addEventListener("click", () => {
-  resultOverlay.style.display = "none";
-  initLevel(0);
-});
+  restartAllBtn.addEventListener('click', () => {
+    state.summary = [];
+    summaryScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+  });
 
-/* ===========================
-   시작 버튼
-=========================== */
-
-startBtn.addEventListener("click", () => {
-  startScreen.style.display = "none";
-  gameContainer.style.display = "flex";
-  initLevel(0);
-});
+  // Prepare first render behind start screen for immediate feel.
+  resetStateForStage(false);
+  renderStage();
+  stopTimer();
+  timeValue.textContent = '00:00';
+})();
 </script>
 </body>
 </html>
