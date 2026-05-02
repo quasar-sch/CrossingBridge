@@ -136,6 +136,39 @@
     .screen-card,.modal-card{padding:20px}
     .summary-item{grid-template-columns:1fr;justify-items:start}
   }
+
+  /* 결과/요약 팝업 스크롤 보정 */
+  .screen-card,.modal-card{
+    max-height:calc(100dvh - 36px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  #summaryScreen .screen-card{
+    width:min(860px,100%);
+  }
+  #summaryScreen .list{
+    max-height:min(58dvh, 520px);
+    overflow-y:auto;
+    padding-right:6px;
+  }
+  #summaryScreen .screen-actions{
+    position:sticky;
+    bottom:-26px;
+    background:linear-gradient(180deg,rgba(255,255,255,.76),#fff 42%);
+    padding-top:12px;
+    padding-bottom:4px;
+  }
+  .screen-card::-webkit-scrollbar,
+  #summaryScreen .list::-webkit-scrollbar{
+    width:10px;
+  }
+  .screen-card::-webkit-scrollbar-thumb,
+  #summaryScreen .list::-webkit-scrollbar-thumb{
+    background:#c8d6ee;
+    border-radius:999px;
+  }
+
 </style>
 </head>
 <body>
@@ -181,7 +214,7 @@
     <div class="explain">
       <div><span class="kbd">조작</span> 점 클릭 → 다음 점 클릭</div>
       <div style="margin-top:6px"><span class="kbd">규칙</span> 이미 지난 선은 다시 지날 수 없습니다.</div>
-      <div style="margin-top:6px"><span class="kbd">목표</span> 1~19단계는 완주, 20단계는 불가능 판별</div>
+      <div style="margin-top:6px"><span class="kbd">목표</span> 1~9단계는 완주, 10단계는 불가능 판별</div>
     </div>
     <div class="screen-actions">
       <button class="btn primary" id="startBtn">시작하기</button>
